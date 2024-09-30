@@ -1,0 +1,15 @@
+teoreticky uvod
+	tcp
+	tls
+	QUIC
+	JA3
+	JA4
+	pattern
+	Apriori
+	dalsi analyza ?
+	info entropie ?
+related work
+navrh
+implementace
+experiemnty
+vysledky
