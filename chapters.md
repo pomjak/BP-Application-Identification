@@ -1,0 +1,19 @@
+## chapters [DRAFT]
+ - teoreticky uvod
+	- tcp
+	- tls
+		- uvod
+		- handshake
+	- JA3
+	- JA4
+	- pattern
+		- Apriori / prefixSpan
+	- dalsi analyza ?
+	- info entropie ?
+ - related work
+ - navrh
+	- dataset
+		- tabulky agregace
+ - implementace
+ - experiemnty
+ - vysledky
