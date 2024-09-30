@@ -1,5 +1,5 @@
 ## chapters [DRAFT]
- - teoreticky uvod
+- teoreticky uvod
 	- tcp
 	- tls
 		- uvod
@@ -10,10 +10,11 @@
 		- Apriori / prefixSpan
 	- dalsi analyza ?
 	- info entropie ?
- - related work
- - navrh
-	- dataset
-		- tabulky agregace
- - implementace
- - experiemnty
- - vysledky
+	- related work
+- dataset
+	- info
+	- tabulky agregace
+- navrh
+- implementace
+- experiemnty
+- vysledky
