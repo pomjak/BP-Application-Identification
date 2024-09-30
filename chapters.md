@@ -1,20 +1,28 @@
 ## chapters [DRAFT]
 - teoreticky uvod
-	- tcp
+	- tcp ?
 	- tls
 		- uvod
 		- handshake
+			-detailni info
 	- JA3
 	- JA4
 	- pattern
-		- Apriori / prefixSpan
+		- Apriori / prefixSpan ?
 	- dalsi analyza ?
-	- info entropie ?
-	- related work
+		- vahy pro dalsi prvky na zaklade info entropie ?
+- related work
+	- On Reliability of JA3 Hashes for Fingerprinting Mobile Application
+	- A Closer Look at JA4 Fingerprints for Application Identification in Encrypted Traffic
+	- Using JA4+ Fingerprints for Malware Detection in Encrypted Traffic
+	- Mobile Device Fingeprinting
 - dataset
 	- info
-	- tabulky agregace
+	- tabulky, agregace
 - navrh
+	- navrh zpusobu hodnoceni identifikace (prumerny pocet kandidatu, umisteni spravneho kandidate v mnozine)
 - implementace
 - experiemnty
+	- uprava vah, atd?
 - vysledky
+	-zhodnoceni

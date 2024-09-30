@@ -5,3 +5,4 @@
  - obsah BP
     - zminovat se o TCP? ISO/OSI asi ne?
     - kolik stranek idealne do konce zimniho semestru ?
+    - Mate nejake stranky s radami a pokyny?
