@@ -4,5 +4,6 @@
     - chapu ze u vyhledavani patternu je treba pouzit vlastni
  - obsah BP
     - zminovat se o TCP? ISO/OSI asi ne?
+    - popisovat tls1.3 kdyz neni v datasetu?
     - kolik stranek idealne do konce zimniho semestru ?
     - Mate nejake stranky s radami a pokyny?
