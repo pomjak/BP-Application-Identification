@@ -7,3 +7,5 @@
     - popisovat tls1.3 kdyz neni v datasetu?
     - kolik stranek idealne do konce zimniho semestru ?
     - Mate nejake stranky s radami a pokyny?
+ - citace
+   - jak citovat polozky ktere nejdou naleznout?
