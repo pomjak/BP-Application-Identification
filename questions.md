@@ -9,3 +9,4 @@
     - Mate nejake stranky s radami a pokyny?
  - citace
    - jak citovat polozky ktere nejdou naleznout?
+   - jak citovat RFC, techReport?
