@@ -10,5 +10,5 @@
     - jak pouzivat a sklonovat anglicke zkratky
     - diagramy exportovat jako pdf vs svg?
  - citace
-   - jak citovat polozky ktere nejdou naleznout?
+   - jak citovat polozky ktere nejnajdu?
    - jak citovat RFC, techReport, manual?
