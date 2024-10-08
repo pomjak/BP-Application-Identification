@@ -7,6 +7,8 @@
     - popisovat tls1.3 kdyz neni v datasetu?
     - kolik stranek idealne do konce zimniho semestru ?
     - Mate nejake stranky s radami a pokyny?
+    - jak pouzivat a sklonovat anglicke zkratky
+    - diagramy exportovat jako pdf vs svg?
  - citace
    - jak citovat polozky ktere nejdou naleznout?
-   - jak citovat RFC, techReport?
+   - jak citovat RFC, techReport, manual?
