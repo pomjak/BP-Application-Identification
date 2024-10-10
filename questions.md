@@ -24,3 +24,5 @@
    - jak citovat RFC, techReport, manual?
       - ozve se TBA
 ### 6.tyden
+ - __BP__
+    - muze byt obsah pres 2 stranky?
