@@ -26,3 +26,7 @@
 ### 6.tyden
  - __BP__
     - muze byt obsah pres 2 stranky?
+    - jak citovat "Blinded version" ?
+    - jak prepsat podsekce Obsah zpravy client-server hello + extensions
+ - __oponent__
+    - jak je prirazovan oponent?
