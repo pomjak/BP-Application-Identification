@@ -29,5 +29,16 @@
     - jak citovat "Blinded version" ?
     - jak prepsat podsekce Obsah zpravy client-server hello + extensions
     - potvrzeni od ustavu na 2.strance ?
- - __oponent__
+    - pozuiti \clearpage ?
+    - sekce 2.3.1 ukazka tvorby otisku
+ - __obhajoby__
     - jak je prirazovan oponent?
+    - obhajoby jsou aji v zimnim aji v letnim, kdy +- v zimnim?
+ - __experiment cases__
+    - presnost bez otisku
+    - kontext vs otisky
+    - kontext + otisky
+    - kontext + otisky + dalsi info. vyznamne atributy spojeni 
+ - __implementace__
+    - pouzivat JA4 a zaroven JA3 ikdyz to je tls 1.2 prevazne
+    - nebo pouze JA3 ci JA4 ?
