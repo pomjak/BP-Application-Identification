@@ -1,0 +1,2 @@
+mlxtend==0.23.3
+prefixspan==0.5.2
