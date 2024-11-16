@@ -4,3 +4,4 @@ __pycache__/
 *.zip
 myenv
 .vscode
+update_date.py
