@@ -6,3 +6,7 @@ Xlogin: xpomsa00
 Created: 15/11/2024
 Updated: 16/11/2024
 """
+class DatasetParser:
+    def __init__(self, dataset):
+        self.dataset = dataset
+        
