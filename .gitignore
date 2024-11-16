@@ -5,3 +5,4 @@ __pycache__/
 myenv
 .vscode
 update_date.py
+*.log
