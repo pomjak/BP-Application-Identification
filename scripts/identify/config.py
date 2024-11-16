@@ -8,15 +8,23 @@ Updated: 16/11/2024
 """
 
 import argparse
+from logger import Logger
 
 
 class Config:
     def __init__(self):
-        args = self.parse_arguments()
-        self.ds = args.dataset
-        self.ja = args.ja_version
-        self.pattern_algo = args.pattern_algorithm
-        self.map_algos()
+        with Logger() as logger:
+            logger.info("Parsing command-line arguments...")
+            args = self.parse_arguments()
+            self.ds = args.dataset
+            logger.info(f"Dataset path set: {self.ds}")
+
+            self.ja = args.ja_version
+            logger.info(f"JA version set: {self.ja}")
+
+            self.pattern_algo = args.pattern_algorithm
+            self.map_algos()
+            logger.info(f"Pattern algorithm set: {self.pattern_algo}")
 
     def parse_arguments(self):
         parser = argparse.ArgumentParser(
