@@ -4,7 +4,9 @@ Description: Main file for identification of applications using JA3/4 fingerprin
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
+Updated: 16/11/2024
 """
+
 from config import config
 from fingerprinting import JA3, JA4
 from pattern_matching import Apriori, SPADE, PrefixSpan

@@ -1,9 +1,10 @@
 """
 File: config.py
-Description: This file contains the Config class which parses and stores command-line arguments.
+Description: This file contains the config class which parses and stores command-line arguments.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
+Updated: 16/11/2024
 """
 
 import argparse
@@ -45,6 +46,7 @@ class Config:
 
         return parser.parse_args()
 
+    # map abbreviations to complete names
     def map_algos(self):
         pattern_map = {"a": "apriori", "p": "prefixspan", "s": "spade"}
         if self.pattern_algo in pattern_map:

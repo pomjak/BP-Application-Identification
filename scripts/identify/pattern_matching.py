@@ -4,9 +4,12 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
+Updated: 16/11/2024
 """
+
 from prefixspan import prefixspan as ps
 from mlxtend.frequent_patterns import apriori as ap
+
 # from spade import spade as sp
 
 

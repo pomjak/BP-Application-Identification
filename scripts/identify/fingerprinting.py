@@ -4,14 +4,19 @@ Description: This file contains methods for identification of applications using
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
+Updated: 16/11/2024
 """
+
+
 class FingerprintingMethod:
     def fingerprint(self, data):
         raise NotImplementedError("This method should be overridden by derived classes")
 
+
 class JA3(FingerprintingMethod):
     def fingerprint(self, data):
         raise NotImplementedError("JA3 fingerprint method called")
+
 
 class JA4(FingerprintingMethod):
     def fingerprint(self, data):
