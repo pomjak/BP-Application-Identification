@@ -16,15 +16,15 @@ class Config:
         with Logger() as logger:
             logger.info("Parsing command-line arguments...")
             args = self.parse_arguments()
-            self.ds = args.dataset
-            logger.info(f"Dataset path set: {self.ds}")
+            self.dataset = args.dataset
+            logger.info(f"Dataset path set: {self.dataset}")
 
-            self.ja = args.ja_version
-            logger.info(f"JA version set: {self.ja}")
+            self.ja_version = args.ja_version
+            logger.info(f"JA version set: {self.ja_version}")
 
-            self.pattern_algo = args.pattern_algorithm
+            self.pattern_algorithm = args.pattern_algorithm
             self.map_algos()
-            logger.info(f"Pattern algorithm set: {self.pattern_algo}")
+            logger.info(f"Pattern algorithm set: {self.pattern_algorithm}")
 
     def parse_arguments(self):
         parser = argparse.ArgumentParser(
@@ -57,8 +57,8 @@ class Config:
     # map abbreviations to complete names
     def map_algos(self):
         pattern_map = {"a": "apriori", "p": "prefixspan", "s": "spade"}
-        if self.pattern_algo in pattern_map:
-            self.pattern_algo = pattern_map[self.pattern_algo]
+        if self.pattern_algorithm in pattern_map:
+            self.pattern_algorithm = pattern_map[self.pattern_algorithm]
 
 
 config = Config()
