@@ -14,8 +14,8 @@ from sklearn.model_selection import train_test_split
 
 class Database:
     def __init__(self, dataset):
-        self.dataset = dataset
         with Logger() as logger:
+            self.dataset = dataset
             logger.info("Parsing dataset ...")
             self.df = pd.read_csv(self.dataset, delimiter=";")
 
