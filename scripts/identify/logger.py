@@ -4,7 +4,7 @@ Description: This file contains Logger class for creating log information.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 16/11/2024
+Updated: 17/11/2024
 """
 
 import inspect
@@ -34,6 +34,7 @@ class Logger:
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_message = f"{current_time} [{level}] {project_folder}/{filename}:{lineno} - {message}\n"
         self.log.write(log_message)
+        self.log.flush()
 
     def debug(self, message):
         self._log("DEBUG", message)

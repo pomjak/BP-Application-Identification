@@ -47,7 +47,7 @@ class Database:
                         self.lookup_table[ja4hash].add(app_name)
                     else:
                         self.lookup_table[ja4hash] = {app_name}
-                        
+
                 else:
                     ja3hash = row[col_names.JA3]
 
@@ -55,6 +55,13 @@ class Database:
                         self.lookup_table[ja3hash].add(app_name)
                     else:
                         self.lookup_table[ja3hash] = {app_name}
+
+    def log_lookup_table(self):
+        with Logger() as logger:
+            logger.info("Printing lookup table ...")
+            for key, value in self.lookup_table.items():
+                logger.debug(f"Key: {key}, Value: {value}")
+            logger.debug(f"{len(self.lookup_table)} keys in lookup table")
 
     def get_app(self, ja_hash):
         return self.lookup_table.get(ja_hash, set())

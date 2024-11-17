@@ -8,7 +8,7 @@ Updated: 17/11/2024
 """
 
 from logger import Logger
-from config import config
+from config import Config
 from database import Database
 from fingerprinting import JA3, JA4
 from pattern_matching import Apriori, SPADE, PrefixSpan
@@ -18,6 +18,7 @@ def main():
     with Logger() as logger:
         logger.info("[START]")
 
+        config = Config()
         db = Database(config.dataset)
 
         logger.info("Selecting JA version ...")
@@ -31,6 +32,9 @@ def main():
         logger.info("Identifying using fingerprinting method...")
         fingerprinting.identify(db)
         fingerprinting.display_statistics()
+        db.log_lookup_table()
+
+        logger.info("[FINISH]")
 
 
 if __name__ == "__main__":
