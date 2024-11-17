@@ -4,7 +4,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 16/11/2024
+Updated: 17/11/2024
 """
 
 from logger import Logger
@@ -29,4 +29,6 @@ class Database:
         return self.df
 
     def get_app(self, col, value):
-        return set(self.train_df[self.train_df[col] == value]["AppName"].tolist())
+        filtered_df = self.train_df[self.train_df[col] == value]
+        app_names = filtered_df["AppName"].tolist()
+        return set(app_names)
