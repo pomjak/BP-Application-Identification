@@ -16,7 +16,7 @@ from pattern_matching import Apriori, SPADE, PrefixSpan
 
 def main():
     with Logger() as logger:
-        logger.info("Starting identification process...")
+        logger.info("[START]")
 
         db = Database(config.dataset)
 

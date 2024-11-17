@@ -32,27 +32,29 @@ class Database:
         return self.df
 
     def create_lookup_table(self, ja_version):
-        self.lookup_table = {}
+        with Logger() as logger:
+            logger.info("Creating lookup table ...")
+            self.lookup_table = {}
 
-        for _, row in self.train_df.iterrows():
-            app_name = row[col_names.APP_NAME]
-            # lookup table for JA3/4 fingerprints and corresponding application names as set of strings
+            for _, row in self.train_df.iterrows():
+                app_name = row[col_names.APP_NAME]
+                # lookup table for JA3/4 fingerprints and corresponding application names as set of strings
 
-            if ja_version == 4:
-                ja4hash = row[col_names.JA4]
+                if ja_version == 4:
+                    ja4hash = row[col_names.JA4]
 
-                if ja4hash in self.lookup_table:
-                    self.lookup_table[ja4hash].add(app_name)
+                    if ja4hash in self.lookup_table:
+                        self.lookup_table[ja4hash].add(app_name)
+                    else:
+                        self.lookup_table[ja4hash] = {app_name}
+                        
                 else:
-                    self.lookup_table[ja4hash] = {app_name}
-                    
-            else:
-                ja3hash = row[col_names.JA3]
+                    ja3hash = row[col_names.JA3]
 
-                if ja3hash in self.lookup_table:
-                    self.lookup_table[ja3hash].add(app_name)
-                else:
-                    self.lookup_table[ja3hash] = {app_name}
+                    if ja3hash in self.lookup_table:
+                        self.lookup_table[ja3hash].add(app_name)
+                    else:
+                        self.lookup_table[ja3hash] = {app_name}
 
     def get_app(self, ja_hash):
         return self.lookup_table.get(ja_hash, set())
