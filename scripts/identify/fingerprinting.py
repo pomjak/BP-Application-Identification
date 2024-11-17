@@ -6,16 +6,12 @@ Xlogin: xpomsa00
 Created: 15/11/2024
 Updated: 17/11/2024
 """
+
+import constants as col_names
 from database import Database
 
 
 class FingerprintingMethod:
-    JA3_COL_NAME = "JA3hash"
-    JA3S_COL_NAME = "JA3Shash"
-    JA4_COL_NAME = "JA4hash"
-    JA4S_COL_NAME = "JA4Shash"
-    APP_NAME_COL_NAME = "AppName"
-
     def __init__(self):
         self.correct = 0
         self.incorrect = 0
@@ -35,11 +31,11 @@ class FingerprintingMethod:
 
 class JA3(FingerprintingMethod):
     def identify(self, db: Database):
-        for row in db.test_df.iterrows():
-            ja3hash = row[1][self.JA3_COL_NAME]
-            appname = row[1][self.APP_NAME_COL_NAME]
+        for _, row in db.test_df.iterrows():
+            ja3hash = row[col_names.JA3]
+            appname = row[col_names.APP_NAME]
 
-            if appname in db.get_app(self.JA3_COL_NAME, ja3hash):
+            if appname in db.get_app(ja3hash):
                 self.correct += 1
             else:
                 self.incorrect += 1
@@ -47,11 +43,11 @@ class JA3(FingerprintingMethod):
 
 class JA4(FingerprintingMethod):
     def identify(self, db: Database):
-        for row in db.test_df.iterrows():
-            ja4hash = row[1][self.JA4_COL_NAME]
-            appname = row[1][self.APP_NAME_COL_NAME]
-
-            if appname in db.get_app(self.JA4_COL_NAME, ja4hash):
+        for _, row in db.test_df.iterrows():
+            ja4hash = row[col_names.JA4]
+            appname = row[col_names.APP_NAME]
+            
+            if appname in db.get_app(ja4hash):
                 self.correct += 1
             else:
                 self.incorrect += 1

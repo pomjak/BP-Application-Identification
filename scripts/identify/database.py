@@ -7,6 +7,7 @@ Created: 15/11/2024
 Updated: 17/11/2024
 """
 
+import constants as col_names
 from logger import Logger
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -25,10 +26,33 @@ class Database:
                 f"Split dataset {len(self.train_df)} training and {len(self.test_df)} testing samples"
             )
 
+            self.lookup_table = {}
+
     def get_dataframe(self):
         return self.df
 
-    def get_app(self, col, value):
-        filtered_df = self.train_df[self.train_df[col] == value]
-        app_names = filtered_df["AppName"].tolist()
-        return set(app_names)
+    def create_lookup_table(self, ja_version):
+        self.lookup_table = {}
+
+        for _, row in self.train_df.iterrows():
+            app_name = row[col_names.APP_NAME]
+            # lookup table for JA3/4 fingerprints and corresponding application names as set of strings
+
+            if ja_version == 4:
+                ja4hash = row[col_names.JA4]
+
+                if ja4hash in self.lookup_table:
+                    self.lookup_table[ja4hash].add(app_name)
+                else:
+                    self.lookup_table[ja4hash] = {app_name}
+                    
+            else:
+                ja3hash = row[col_names.JA3]
+
+                if ja3hash in self.lookup_table:
+                    self.lookup_table[ja3hash].add(app_name)
+                else:
+                    self.lookup_table[ja3hash] = {app_name}
+
+    def get_app(self, ja_hash):
+        return self.lookup_table.get(ja_hash, set())

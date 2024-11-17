@@ -23,8 +23,10 @@ def main():
         logger.info("Selecting JA version ...")
         if config.ja_version == 4:
             fingerprinting = JA4()
+            db.create_lookup_table(4)
         else:
             fingerprinting = JA3()
+            db.create_lookup_table(3)
 
         logger.info("Identifying using fingerprinting method...")
         fingerprinting.identify(db)
