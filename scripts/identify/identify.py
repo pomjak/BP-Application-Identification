@@ -34,6 +34,16 @@ def main():
         fingerprinting.display_statistics()
         db.log_lookup_table()
 
+        match config.pattern_algorithm:
+            case "apriori":
+                context = Apriori()
+            case "prefixspan":
+                context = PrefixSpan()
+            case "spade":
+                context = SPADE()
+
+        context.identify(db)
+        context.display_statistics()
         logger.info("[FINISH]")
 
 
