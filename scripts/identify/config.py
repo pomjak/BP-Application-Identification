@@ -4,7 +4,7 @@ Description: This file contains the config class which parses and stores command
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 16/11/2024
+Updated: 17/11/2024
 """
 
 import argparse
@@ -59,6 +59,3 @@ class Config:
         pattern_map = {"a": "apriori", "p": "prefixspan", "s": "spade"}
         if self.pattern_algorithm in pattern_map:
             self.pattern_algorithm = pattern_map[self.pattern_algorithm]
-
-
-config = Config()
