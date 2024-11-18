@@ -17,6 +17,10 @@ class Database:
     def __init__(self, dataset):
         with Logger() as logger:
             self.dataset = dataset
+            self.lookup_table = {}
+            self.train_df = None
+            self.test_df = None
+            self.ja_version = None
 
             logger.info("Parsing dataset ...")
             try:
@@ -31,24 +35,25 @@ class Database:
             logger.info(f"training dataset: {len(self.train_df)}")
             logger.info(f"testing dataset: {len(self.test_df)}")
 
-            self.lookup_table = {}
-
     def create_lookup_table(self, ja_version):
         with Logger() as logger:
             logger.info("Creating lookup table ...")
 
             self.ja_version = ja_version
             ja_keys = col_names.get_keys(ja_version)
-            # init lookup tables for every 
+
+            # init lookup tables for every
             self.lookup_table = {key: {} for key in ja_keys}
 
             for index, row in self.train_df.iterrows():
                 # get app name and ja keys
                 app_name = row[col_names.APP_NAME]
 
-                # insert ja and jas fingerprints
+                # insert ja, jas fingerprints and sni 
                 for key in ja_keys:
-                    self.__update_lookup_table(key, row[key], app_name)
+                    # if item from csv is missing, ignore
+                    if pd.notna(row[key]):
+                        self.__update_lookup_table(key, row[key], app_name)
 
     def __update_lookup_table(self, key, value, app_name):
         # if exists update the set, else create a new set
