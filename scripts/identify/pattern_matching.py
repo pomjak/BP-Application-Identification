@@ -7,8 +7,8 @@ Created: 15/11/2024
 Updated: 18/11/2024
 """
 
-from prefixspan import prefixspan as ps
-from mlxtend.frequent_patterns import apriori as ap
+from prefixspan import prefixspan
+from mlxtend.frequent_patterns import apriori
 
 # from spade import spade as sp
 

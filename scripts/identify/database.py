@@ -17,7 +17,10 @@ class Database:
     def __init__(self, dataset):
         with Logger() as logger:
             self.dataset = dataset
+            # lookup table for fingerprinting
             self.lookup_table = {}
+            # lookup table for frequent patterns
+            self.frequent_patterns = {}
             self.train_df = None
             self.test_df = None
             self.ja_version = None
@@ -30,7 +33,7 @@ class Database:
                 print("File not found.")
                 exit(1)
 
-            # Split the dataset into training and testing data frames
+            # split the dataset into training and testing data frames
             self.train_df, self.test_df = train_test_split(df, train_size=0.8)
             logger.info(f"training dataset: {len(self.train_df)}")
             logger.info(f"testing dataset: {len(self.test_df)}")
@@ -49,7 +52,7 @@ class Database:
                 # get app name and ja keys
                 app_name = row[col_names.APP_NAME]
 
-                # insert ja, jas fingerprints and sni 
+                # insert ja, jas fingerprints and sni
                 for key in ja_keys:
                     # if item from csv is missing, ignore
                     if pd.notna(row[key]):

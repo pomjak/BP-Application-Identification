@@ -12,6 +12,7 @@ from config import Config
 from database import Database
 from fingerprinting import JA3, JA4
 from pattern_matching import Apriori, SPADE, PrefixSpan
+import time
 
 
 def main():
@@ -53,4 +54,6 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    print("--- %s seconds ---" % round(time.time() - start_time, 2))
