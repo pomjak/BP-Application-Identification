@@ -45,8 +45,10 @@
 ### 10.tyden
   - __hototvo__
     - implementace ja3 a ja4
+    - uspesnost hodnocena na zaklade existence spravneho jmena v kandidatni mnozine
   - __implementace__
     - prohazet dataset?
     - type v datasetu
     - ktere atributy vyuzivat pro vyhledevani vzoru
-      bavili jsme se o te infor entropii...
+        bavili jsme se o te info entropii...
+    - jak teda hodnotit uspesnost, omezit mnozinu kandidatu
