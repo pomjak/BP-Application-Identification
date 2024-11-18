@@ -4,7 +4,7 @@ Description: This file contains the config class which parses and stores command
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 17/11/2024
+Updated: 18/11/2024
 """
 
 import argparse
@@ -15,8 +15,10 @@ class Config:
     def __init__(self):
         with Logger() as logger:
             logger.info("Parsing command-line arguments...")
+
             args = self.parse_arguments()
             self.dataset = args.dataset
+
             logger.info(f"Dataset path set: {self.dataset}")
 
             self.ja_version = args.ja_version

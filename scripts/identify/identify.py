@@ -22,6 +22,7 @@ def main():
         db = Database(config.dataset)
 
         logger.info("Selecting JA version ...")
+
         if config.ja_version == 4:
             fingerprinting = JA4()
             db.create_lookup_table(4)
@@ -30,9 +31,10 @@ def main():
             db.create_lookup_table(3)
 
         logger.info("Identifying using fingerprinting method...")
+
         fingerprinting.identify(db)
         fingerprinting.display_statistics()
-        db.log_lookup_table()
+        db.log_lookup_table()  # [DEBUG]
 
         match config.pattern_algorithm:
             case "apriori":
@@ -43,8 +45,10 @@ def main():
                 context = SPADE()
 
         logger.info("Identifying using pattern searching algos...")
+
         context.identify(db)
         context.display_statistics()
+
         logger.info("[FINISH]")
 
 

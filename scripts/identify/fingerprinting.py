@@ -71,12 +71,15 @@ class JA3(FingerprintingMethod):
             sni = row[col_names.SNI]
             appname = row[col_names.APP_NAME]
 
+            # get sets of candidates for each fingerprint
             ja_candidates = db.get_app(col_names.JA3, ja3)
             ja3s_candidates = db.get_app(col_names.JA3_S, ja3s)
             sni_candidates = db.get_app(col_names.SNI, sni)
 
+            # union all candidates in case of combination
             candidates = ja_candidates.union(ja3s_candidates).union(sni_candidates)
 
+            # check if candidates match real app name and update statistics accordingly
             self.resolve_and_update(appname, ja_candidates)
             self.resolve_and_update_combination(appname, candidates)
 

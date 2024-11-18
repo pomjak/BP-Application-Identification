@@ -58,9 +58,9 @@ class Database:
 
     def log_lookup_table(self):
         with Logger() as logger:
-            logger.info("Printing lookup tables ...")
+            logger.debug("Printing lookup tables ...")
             for col in col_names.get_keys(self.ja_version):
-                logger.debug(f"Table: {col}")
+                logger.info(f"Table: {col}")
                 for key, value in self.lookup_table[col].items():
                     logger.debug(f"key: {key}, value: {value}")
 
