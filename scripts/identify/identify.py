@@ -4,7 +4,7 @@ Description: Main file for identification of applications using JA3/4 fingerprin
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 17/11/2024
+Updated: 18/11/2024
 """
 
 from logger import Logger
@@ -42,6 +42,7 @@ def main():
             case "spade":
                 context = SPADE()
 
+        logger.info("Identifying using pattern searching algos...")
         context.identify(db)
         context.display_statistics()
         logger.info("[FINISH]")

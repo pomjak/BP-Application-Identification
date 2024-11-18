@@ -15,24 +15,28 @@ class FingerprintingMethod:
     def __init__(self):
         self.correct = 0
         self.incorrect = 0
-        self.correct_full = 0
-        self.incorrect_full = 0
+        self.correct_combination = 0
+        self.incorrect_combination = 0
 
-    def statistics(self):
+    def get_statistics(self):
         return self.correct, self.incorrect, self.correct + self.incorrect
 
-    def full_statistics(self):
-        return self.correct_full, self.incorrect_full, self.correct_full + self.incorrect_full
+    def get_statistics_combination(self):
+        return (
+            self.correct_combination,
+            self.incorrect_combination,
+            self.correct_combination + self.incorrect_combination,
+        )
 
     def display_statistics(self):
-        correct, incorrect, total = self.statistics()
+        correct, incorrect, total = self.get_statistics()
         print("Real app name was found in set of candidates:")
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
         print(f"Accuracy: {correct/total}")
-        
-        correct, incorrect, total = self.full_statistics()
+
+        correct, incorrect, total = self.get_statistics_combination()
         print("________________________________________________________")
         print("combination of JA + JAS + SNI")
         print("Real app name was found in set of candidates:")
@@ -40,6 +44,18 @@ class FingerprintingMethod:
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
         print(f"Accuracy: {correct/total}")
+
+    def resolve_and_update(self, appname, candidates):
+        if appname in candidates:
+            self.correct += 1
+        else:
+            self.incorrect += 1
+
+    def resolve_and_update_combination(self, appname, candidates):
+        if appname in candidates:
+            self.correct_combination += 1
+        else:
+            self.incorrect_combination += 1
 
     def identify(self, db: Database):
         raise NotImplementedError("This method should be overridden by derived classes")
@@ -55,43 +71,29 @@ class JA3(FingerprintingMethod):
             sni = row[col_names.SNI]
             appname = row[col_names.APP_NAME]
 
-            ja3_candidates = db.get_app(col_names.JA3, ja3)
+            ja_candidates = db.get_app(col_names.JA3, ja3)
             ja3s_candidates = db.get_app(col_names.JA3_S, ja3s)
             sni_candidates = db.get_app(col_names.SNI, sni)
 
-            candidates = ja3_candidates.union(ja3s_candidates).union(sni_candidates)
+            candidates = ja_candidates.union(ja3s_candidates).union(sni_candidates)
 
-            if appname in ja3_candidates:
-                self.correct += 1
-            else:
-                self.incorrect += 1
-            
-            if appname in candidates:
-                self.correct_full += 1
-            else:
-                self.incorrect_full += 1
+            self.resolve_and_update(appname, ja_candidates)
+            self.resolve_and_update_combination(appname, candidates)
 
 
 class JA4(FingerprintingMethod):
     def identify(self, db: Database):
         for _, row in db.test_df.iterrows():
-            ja4= row[col_names.JA4]
+            ja4 = row[col_names.JA4]
             ja4s = row[col_names.JA4_S]
             sni = row[col_names.SNI]
             appname = row[col_names.APP_NAME]
-            
-            ja4_candidates = db.get_app(col_names.JA4,ja4)
-            ja4s_candidates = db.get_app(col_names.JA4_S,ja4s)
-            sni_candidates = db.get_app(col_names.SNI,sni)
-            
-            candidates = ja4_candidates.union(ja4s_candidates).union(sni_candidates)
-            
-            if appname in ja4_candidates:
-                self.correct += 1
-            else:
-                self.incorrect += 1
-                
-            if appname in candidates:
-                self.correct_full += 1
-            else:
-                self.incorrect_full += 1
+
+            ja_candidates = db.get_app(col_names.JA4, ja4)
+            ja4s_candidates = db.get_app(col_names.JA4_S, ja4s)
+            sni_candidates = db.get_app(col_names.SNI, sni)
+
+            candidates = ja_candidates.union(ja4s_candidates).union(sni_candidates)
+
+            self.resolve_and_update(appname, ja_candidates)
+            self.resolve_and_update_combination(appname, candidates)

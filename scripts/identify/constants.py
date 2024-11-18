@@ -14,3 +14,9 @@ JA4 = "JA4hash"
 JA4_S = "JA4Shash"
 APP_NAME = "AppName"
 SNI = "SNI"
+
+
+def get_keys(ja_version):
+    # select correct col names based on version of JA
+    ja_keys = [JA4, JA4_S, SNI] if ja_version == 4 else [JA3, JA3_S, SNI]
+    return ja_keys
