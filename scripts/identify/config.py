@@ -16,7 +16,7 @@ class Config:
         with Logger() as logger:
             logger.info("Parsing command-line arguments...")
 
-            args = self.parse_arguments()
+            args = self.__parse_arguments()
             self.dataset = args.dataset
 
             logger.info(f"Dataset path set: {self.dataset}")
@@ -25,10 +25,10 @@ class Config:
             logger.info(f"JA version set: {self.ja_version}")
 
             self.pattern_algorithm = args.pattern_algorithm
-            self.map_algos()
+            self.__map_algos()
             logger.info(f"Pattern algorithm set: {self.pattern_algorithm}")
 
-    def parse_arguments(self):
+    def __parse_arguments(self):
         parser = argparse.ArgumentParser(
             description="Identify applications using JA3/4 fingerprints and frequent pattern matching algorithms in network traffic"
         )
@@ -57,7 +57,7 @@ class Config:
         return parser.parse_args()
 
     # map abbreviations to complete names
-    def map_algos(self):
+    def __map_algos(self):
         pattern_map = {"a": "apriori", "p": "prefixspan", "s": "spade"}
         if self.pattern_algorithm in pattern_map:
             self.pattern_algorithm = pattern_map[self.pattern_algorithm]

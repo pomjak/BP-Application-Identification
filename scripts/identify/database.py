@@ -19,7 +19,12 @@ class Database:
             self.dataset = dataset
 
             logger.info("Parsing dataset ...")
-            df = pd.read_csv(self.dataset, delimiter=";")
+            try:
+                df = pd.read_csv(self.dataset, delimiter=";")
+            except FileNotFoundError:
+                logger.error("File not found.")
+                print("File not found.")
+                exit(1)
 
             # Split the dataset into training and testing data frames
             self.train_df, self.test_df = train_test_split(df, train_size=0.8)
@@ -34,22 +39,18 @@ class Database:
 
             self.ja_version = ja_version
             ja_keys = col_names.get_keys(ja_version)
-            # init lookup tables
+            # init lookup tables for every 
             self.lookup_table = {key: {} for key in ja_keys}
 
             for index, row in self.train_df.iterrows():
                 # get app name and ja keys
                 app_name = row[col_names.APP_NAME]
-                sni = row[col_names.SNI]
-
-                # insert sni items as it is always stored
-                self._update_lookup_table(col_names.SNI, sni, app_name)
 
                 # insert ja and jas fingerprints
                 for key in ja_keys:
-                    self._update_lookup_table(key, row[key], app_name)
+                    self.__update_lookup_table(key, row[key], app_name)
 
-    def _update_lookup_table(self, key, value, app_name):
+    def __update_lookup_table(self, key, value, app_name):
         # if exists update the set, else create a new set
         if value in self.lookup_table[key]:
             self.lookup_table[key][value].add(app_name)

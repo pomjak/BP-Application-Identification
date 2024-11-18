@@ -25,7 +25,7 @@ class Logger:
     def __exit__(self, exc_type, exc_value, traceback):
         self.log.close()
 
-    def _log(self, level, message):
+    def __log(self, level, message):
         frame = inspect.currentframe().f_back.f_back
         full_path = frame.f_code.co_filename
         project_folder = os.path.basename(os.path.dirname(full_path))
@@ -39,13 +39,13 @@ class Logger:
         self.log.flush()
 
     def debug(self, message):
-        self._log("DEBUG", message)
+        self.__log("DEBUG", message)
 
     def info(self, message):
-        self._log("INFO", message)
+        self.__log("INFO", message)
 
     def warn(self, message):
-        self._log("WARNING", message)
+        self.__log("WARNING", message)
 
     def error(self, message):
-        self._log("ERROR", message)
+        self.__log("ERROR", message)

@@ -18,10 +18,10 @@ class FingerprintingMethod:
         self.correct_combination = 0
         self.incorrect_combination = 0
 
-    def get_statistics(self):
+    def __get_statistics(self):
         return self.correct, self.incorrect, self.correct + self.incorrect
 
-    def get_statistics_combination(self):
+    def __get_statistics_combination(self):
         return (
             self.correct_combination,
             self.incorrect_combination,
@@ -29,14 +29,14 @@ class FingerprintingMethod:
         )
 
     def display_statistics(self):
-        correct, incorrect, total = self.get_statistics()
+        correct, incorrect, total = self.__get_statistics()
         print("Real app name was found in set of candidates:")
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
         print(f"Accuracy: {correct/total}")
 
-        correct, incorrect, total = self.get_statistics_combination()
+        correct, incorrect, total = self.__get_statistics_combination()
         print("________________________________________________________")
         print("combination of JA + JAS + SNI")
         print("Real app name was found in set of candidates:")
@@ -45,13 +45,13 @@ class FingerprintingMethod:
         print(f"Total: {total}")
         print(f"Accuracy: {correct/total}")
 
-    def resolve_and_update(self, appname, candidates):
+    def _resolve_and_update(self, appname, candidates):
         if appname in candidates:
             self.correct += 1
         else:
             self.incorrect += 1
 
-    def resolve_and_update_combination(self, appname, candidates):
+    def _resolve_and_update_combination(self, appname, candidates):
         if appname in candidates:
             self.correct_combination += 1
         else:
@@ -80,8 +80,8 @@ class JA3(FingerprintingMethod):
             candidates = ja_candidates.union(ja3s_candidates).union(sni_candidates)
 
             # check if candidates match real app name and update statistics accordingly
-            self.resolve_and_update(appname, ja_candidates)
-            self.resolve_and_update_combination(appname, candidates)
+            self._resolve_and_update(appname, ja_candidates)
+            self._resolve_and_update_combination(appname, candidates)
 
 
 class JA4(FingerprintingMethod):
@@ -98,5 +98,5 @@ class JA4(FingerprintingMethod):
 
             candidates = ja_candidates.union(ja4s_candidates).union(sni_candidates)
 
-            self.resolve_and_update(appname, ja_candidates)
-            self.resolve_and_update_combination(appname, candidates)
+            self._resolve_and_update(appname, ja_candidates)
+            self._resolve_and_update_combination(appname, candidates)
