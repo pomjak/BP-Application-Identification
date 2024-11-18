@@ -72,15 +72,25 @@ class JA3(FingerprintingMethod):
             appname = row[col_names.APP_NAME]
 
             # get sets of candidates for each fingerprint
-            ja_candidates = db.get_app(col_names.JA3, ja3)
+            ja3_candidates = db.get_app(col_names.JA3, ja3)
             ja3s_candidates = db.get_app(col_names.JA3_S, ja3s)
             sni_candidates = db.get_app(col_names.SNI, sni)
 
-            # union all candidates in case of combination
-            candidates = ja_candidates.union(ja3s_candidates).union(sni_candidates)
+            # filter out empty sets
+            non_empty_sets = [
+                candidates
+                for candidates in [ja3_candidates, ja3s_candidates, sni_candidates]
+                if candidates
+            ]
+
+            # intersect all not-empty sets
+            if non_empty_sets:
+                candidates = set.intersection(*non_empty_sets)
+            else:
+                candidates = set()
 
             # check if candidates match real app name and update statistics accordingly
-            self._resolve_and_update(appname, ja_candidates)
+            self._resolve_and_update(appname, ja3_candidates)
             self._resolve_and_update_combination(appname, candidates)
 
 
@@ -92,11 +102,20 @@ class JA4(FingerprintingMethod):
             sni = row[col_names.SNI]
             appname = row[col_names.APP_NAME]
 
-            ja_candidates = db.get_app(col_names.JA4, ja4)
+            ja4_candidates = db.get_app(col_names.JA4, ja4)
             ja4s_candidates = db.get_app(col_names.JA4_S, ja4s)
             sni_candidates = db.get_app(col_names.SNI, sni)
 
-            candidates = ja_candidates.union(ja4s_candidates).union(sni_candidates)
+            non_empty_sets = [
+                candidates
+                for candidates in [ja4_candidates, ja4s_candidates, sni_candidates]
+                if candidates
+            ]
+            if non_empty_sets:
+                candidates = set.intersection(*non_empty_sets)
+            else:
+                candidates = set()
 
-            self._resolve_and_update(appname, ja_candidates)
+            self._resolve_and_update(appname, ja4_candidates)
+
             self._resolve_and_update_combination(appname, candidates)
