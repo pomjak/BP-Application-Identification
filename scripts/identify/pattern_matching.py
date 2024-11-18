@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 17/11/2024
+Updated: 18/11/2024
 """
 
 from prefixspan import prefixspan as ps
@@ -15,7 +15,7 @@ from mlxtend.frequent_patterns import apriori as ap
 
 class PatternMatchingMethod:
     def __init__(self):
-        pass
+        raise NotImplementedError("This method should be overridden by subclasses")
 
     def display_statistics(self):
         pass
@@ -25,15 +25,24 @@ class PatternMatchingMethod:
 
 
 class Apriori(PatternMatchingMethod):
+    def __init__(self):
+        pass
+
     def identify(self, data):
         pass
 
 
 class PrefixSpan(PatternMatchingMethod):
+    def __init__(self):
+        pass
+
     def identify(self, data):
         pass
 
 
 class SPADE(PatternMatchingMethod):
+    def __init__(self):
+        pass
+
     def identify(self, data):
         pass
