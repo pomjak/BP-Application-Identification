@@ -17,26 +17,30 @@ class FingerprintingMethod:
         self.incorrect = 0
         self.correct_combination = 0
         self.incorrect_combination = 0
+        self.len_candidates = 0
+        self.len_candidates_combination = 0
 
     def __get_statistics(self):
-        return self.correct, self.incorrect, self.correct + self.incorrect
+        return self.correct, self.incorrect, self.correct + self.incorrect, self.len_candidates
 
     def __get_statistics_combination(self):
         return (
             self.correct_combination,
             self.incorrect_combination,
             self.correct_combination + self.incorrect_combination,
+            self.len_candidates_combination
         )
 
     def display_statistics(self):
-        correct, incorrect, total = self.__get_statistics()
+        correct, incorrect, total, len_cand = self.__get_statistics()
         print("Real app name was found in set of candidates:")
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
         print(f"Accuracy: {correct/total}")
+        print(f"Average number of candidates: {round(len_cand/total,2)}")
 
-        correct, incorrect, total = self.__get_statistics_combination()
+        correct, incorrect, total, len_cand_comb = self.__get_statistics_combination()
         print("________________________________________________________")
         print("combination of JA + JAS + SNI")
         print("Real app name was found in set of candidates:")
@@ -44,14 +48,17 @@ class FingerprintingMethod:
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
         print(f"Accuracy: {correct/total}")
+        print(f"Average number of candidates: {round(len_cand_comb/total,2)}")
 
     def _resolve_and_update(self, appname, candidates):
+        self.len_candidates += len(candidates)
         if appname in candidates:
             self.correct += 1
         else:
             self.incorrect += 1
 
     def _resolve_and_update_combination(self, appname, candidates):
+        self.len_candidates_combination += len(candidates)
         if appname in candidates:
             self.correct_combination += 1
         else:
