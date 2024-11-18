@@ -42,3 +42,11 @@
  - __implementace__
     - pouzivat JA4 a zaroven JA3 ikdyz to je tls 1.2 prevazne
     - nebo pouze JA3 ci JA4 ?
+### 10.tyden
+  - __hototvo__
+    - implementace ja3 a ja4
+  - __implementace__
+    - prohazet dataset?
+    - type v datasetu
+    - ktere atributy vyuzivat pro vyhledevani vzoru
+      bavili jsme se o te infor entropii...
