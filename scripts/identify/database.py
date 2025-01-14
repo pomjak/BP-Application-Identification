@@ -4,7 +4,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 21/11/2024
+Updated: 14/01/2025
 """
 
 import constants as col_names
@@ -34,9 +34,9 @@ class Database:
                 exit(1)
 
             # filter out rows with type A
-            df = df.drop(df[df[col_names.Version] == "A"].index)
+            df = df.drop(df[df[col_names.TYPE] == "A"].index)
             # split the dataset into training and testing data frames
-            self.train_df, self.test_df = train_test_split(df, train_size=0.8)
+            self.train_df, self.test_df = train_test_split(df, train_size=0.8, shuffle=False)
             logger.info(f"training dataset: {len(self.train_df)}")
             logger.info(f"testing dataset: {len(self.test_df)}")
 

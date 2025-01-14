@@ -4,7 +4,7 @@ Description: Main file for identification of applications using JA3/4 fingerprin
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 18/11/2024
+Updated: 14/01/2025
 """
 
 from logger import Logger
@@ -35,20 +35,20 @@ def main():
 
         fingerprinting.identify(db)
         fingerprinting.display_statistics()
-        db.log_lookup_table()  # [DEBUG]
+        # db.log_lookup_table()  # [DEBUG]
 
-        match config.pattern_algorithm:
-            case "apriori":
-                context = Apriori()
-            case "prefixspan":
-                context = PrefixSpan()
-            case "spade":
-                context = SPADE()
+        # match config.pattern_algorithm:
+        #     case "apriori":
+        #         context = Apriori()
+        #     case "prefixspan":
+        #         context = PrefixSpan()
+        #     case "spade":
+        #         context = SPADE()
 
-        logger.info("Identifying using pattern searching algos...")
+        # logger.info("Identifying using pattern searching algos...")
 
-        context.identify(db)
-        context.display_statistics()
+        # context.identify(db)
+        # context.display_statistics()
 
         logger.info("[FINISH]")
 
