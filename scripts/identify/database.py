@@ -4,7 +4,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 14/01/2025
+Updated: 17/02/2025
 """
 
 import constants as col_names
@@ -17,10 +17,8 @@ class Database:
     def __init__(self, dataset):
         with Logger() as logger:
             self.dataset = dataset
-            # lookup table for fingerprinting
-            self.lookup_table = {}
-            # lookup table for frequent patterns
-            self.frequent_patterns = {}
+            self.lookup_table = {}          # lookup table for fingerprinting
+            self.frequent_patterns = {}     # lookup table for frequent patterns
             self.train_df = None
             self.test_df = None
             self.ja_version = None
