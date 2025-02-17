@@ -1,4 +1,4 @@
 mlxtend==0.23.3
 pandas==2.2.3
 prefixspan==0.5.2
-scikit_learn==1.5.2
+scikit_learn==1.6.1
