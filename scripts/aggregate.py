@@ -27,6 +27,20 @@ def process_file(file_path, max_unique_values=10):
         print("\n")
     print(f"Total count: {total_count}")
 
+
+def check_filename_appname_uniqueness(file_path):
+    ds = pd.read_csv(file_path, sep=';')
+    grouped = ds.groupby('Filename')['AppName'].nunique()
+    non_unique_filenames = grouped[grouped > 1]
+
+    if non_unique_filenames.empty:
+        print("All filenames are associated with only one app name.")
+    else:
+        print("The following filenames are associated with more than one app name:")
+        for filename, unique_app_count in non_unique_filenames.items():
+            print(f"  {filename}: {unique_app_count} unique app names")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('file_path', type=str)
@@ -34,3 +48,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     process_file(args.file_path, args.max_unique_values)
+    check_filename_appname_uniqueness(args.file_path)
