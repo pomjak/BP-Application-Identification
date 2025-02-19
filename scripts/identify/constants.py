@@ -4,7 +4,7 @@ Description: This file contains constants representing column names in the datas
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 17/11/2024
-Updated: 21/11/2024
+Updated: 19/02/2025
 """
 
 # modify the constants to match the dataset column names
@@ -15,7 +15,7 @@ JA4_S = "JA4Shash"
 APP_NAME = "AppName"
 SNI = "SNI"
 TYPE = "Version"
-
+FILE = "Filename"
 
 def get_keys(ja_version):
     # select correct col names based on version of JA
