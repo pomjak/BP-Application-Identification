@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 14/01/2025
+Updated: 19/02/2025
 """
 
 from prefixspan import prefixspan
@@ -30,6 +30,7 @@ class Apriori(PatternMatchingMethod):
         pass
     
     def train(self, df):
+        # train apriori on training dataset 
         pass
     
     def identify(self, df):

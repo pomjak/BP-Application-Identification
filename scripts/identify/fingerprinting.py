@@ -4,7 +4,7 @@ Description: This file contains methods for identification of applications using
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 18/11/2024
+Updated: 19/02/2025
 """
 
 import constants as col_names
@@ -21,14 +21,19 @@ class FingerprintingMethod:
         self.len_candidates_combination = 0
 
     def __get_statistics(self):
-        return self.correct, self.incorrect, self.correct + self.incorrect, self.len_candidates
+        return (
+            self.correct,
+            self.incorrect,
+            self.correct + self.incorrect,
+            self.len_candidates,
+        )
 
     def __get_statistics_combination(self):
         return (
             self.correct_combination,
             self.incorrect_combination,
             self.correct_combination + self.incorrect_combination,
-            self.len_candidates_combination
+            self.len_candidates_combination,
         )
 
     def display_statistics(self):
@@ -37,8 +42,8 @@ class FingerprintingMethod:
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
-        print(f"Accuracy: {correct/total}")
-        print(f"Average number of candidates: {round(len_cand/total,2)}")
+        print(f"Accuracy: {correct / total}")
+        print(f"Average number of candidates: {round(len_cand / total, 2)}")
 
         correct, incorrect, total, len_cand_comb = self.__get_statistics_combination()
         print("________________________________________________________")
@@ -47,8 +52,8 @@ class FingerprintingMethod:
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
-        print(f"Accuracy: {correct/total}")
-        print(f"Average number of candidates: {round(len_cand_comb/total,2)}")
+        print(f"Accuracy: {correct / total}")
+        print(f"Average number of candidates: {round(len_cand_comb / total, 2)}")
 
     def _resolve_and_update(self, appname, candidates):
         self.len_candidates += len(candidates)

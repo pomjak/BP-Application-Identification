@@ -17,6 +17,7 @@ SNI = "SNI"
 TYPE = "Version"
 FILE = "Filename"
 
+
 def get_keys(ja_version):
     # select correct col names based on version of JA
     return [JA4, JA4_S, SNI] if ja_version == 4 else [JA3, JA3_S, SNI]

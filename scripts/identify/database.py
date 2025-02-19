@@ -17,8 +17,8 @@ class Database:
     def __init__(self, dataset):
         with Logger() as logger:
             self.dataset = dataset
-            self.lookup_table = {}          # lookup table for fingerprinting
-            self.frequent_patterns = {}     # lookup table for frequent patterns
+            self.lookup_table = {}  # lookup table for fingerprinting
+            self.frequent_patterns = {}  # lookup table for frequent patterns
             self.train_df = None
             self.test_df = None
             self.ja_version = None
@@ -31,28 +31,29 @@ class Database:
                 print("File not found.")
                 exit(1)
 
-            df = df.drop(df[df[col_names.TYPE] == "A"].index)   # filter out rows with type A
-            self.train_df, self.test_df = self.split_dataset(df)
+            df = df.drop(
+                df[df[col_names.TYPE] == "A"].index
+            )  # filter out rows with type A
+            self.split_dataset(df)
             logger.info(f"training dataset: {len(self.train_df)}")
             logger.info(f"testing dataset: {len(self.test_df)}")
 
-
     def split_dataset(self, df):
-        train = []
-        test = []
-        
+        train_list = []
+        test_list = []
+
         grouped = df.groupby(col_names.FILE)
-        
+
         for _, group in grouped:
             if len(group) > 1:
-                train_group, test_group = train_test_split(group, train_size=0.8, shuffle=True)
-                train.append(train_group)
-                test.append(test_group)
+                train_group, test_group = train_test_split(
+                    group, train_size=0.8, shuffle=False
+                )
+                train_list.append(train_group)
+                test_list.append(test_group)
 
-        train_df = pd.concat(train)
-        test_df = pd.concat(test)
-        return train_df, test_df
-
+        self.train_df = pd.concat(train_list)
+        self.test_df = pd.concat(test_list)
 
     def create_lookup_table(self, ja_version):
         with Logger() as logger:
@@ -91,9 +92,9 @@ class Database:
 
     def get_app(self, type, value):
         return self.lookup_table[type].get(value, set())
-    
+
     def get_train_df(self):
         return self.train_df
-    
+
     def get_test_df(self):
         return self.test_df
