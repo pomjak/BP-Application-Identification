@@ -3,6 +3,7 @@ __pycache__/
 
 *.zip
 myenv
+env
 .vscode
 update_date.py
 *.log
