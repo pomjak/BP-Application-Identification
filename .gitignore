@@ -1,4 +1,5 @@
 *.pyc
+*.pylintrc
 __pycache__/
 
 *.zip
