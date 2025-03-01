@@ -4,13 +4,19 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 19/02/2025
+Updated: 01/03/2025
 """
 
 from prefixspan import prefixspan
+from database import Database
+import pandas as pd
 from mlxtend.frequent_patterns import apriori
+from mlxtend.frequent_patterns import association_rules
+from mlxtend.preprocessing import TransactionEncoder
 
 # from spade import spade as sp
+
+import constants as col_names
 
 
 class PatternMatchingMethod:
@@ -26,14 +32,11 @@ class PatternMatchingMethod:
 
 
 class Apriori(PatternMatchingMethod):
-    def __init__(self):
+
+    def train(self, db: Database):
         pass
-    
-    def train(self, df):
-        # train apriori on training dataset 
-        pass
-    
-    def identify(self, df):
+
+    def identify(self, db):
         pass
 
 
@@ -41,7 +44,10 @@ class PrefixSpan(PatternMatchingMethod):
     def __init__(self):
         pass
 
-    def identify(self, data):
+    def train(self, db):
+        pass
+
+    def identify(self, db):
         pass
 
 
@@ -49,5 +55,8 @@ class SPADE(PatternMatchingMethod):
     def __init__(self):
         pass
 
-    def identify(self, data):
+    def train(self, db):
+        pass
+
+    def identify(self, db):
         pass

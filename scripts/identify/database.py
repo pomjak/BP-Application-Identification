@@ -1,10 +1,11 @@
+#!/usr/bin/python3
 """
 File: database.py
 Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 19/02/2025
+Updated: 01/03/2025
 """
 
 import constants as col_names
@@ -15,45 +16,49 @@ from sklearn.model_selection import train_test_split
 
 class Database:
     def __init__(self, dataset):
-        with Logger() as logger:
-            self.dataset = dataset
-            self.lookup_table = {}  # lookup table for fingerprinting
-            self.frequent_patterns = {}  # lookup table for frequent patterns
-            self.train_df = None
-            self.test_df = None
-            self.ja_version = None
+        self.dataset = dataset
+        self.df = None
+        self.lookup_table = {}  # lookup table for fingerprinting
+        self.frequent_patterns = {}  # lookup table for frequent patterns
+        self.train_df = []
+        self.test_df = None
+        self.ja_version = None
 
+        self.handle_file(dataset)
+        self.split_dataset()
+
+    def handle_file(self, file):
+        with Logger() as logger:
             logger.info("Parsing dataset ...")
             try:
-                df = pd.read_csv(self.dataset, delimiter=";")
+                self.df = pd.read_csv(file, delimiter=";")
             except FileNotFoundError:
                 logger.error("File not found.")
                 print("File not found.")
                 exit(1)
+            except pd.errors.EmptyDataError:
+                logger.error("File is empty.")
+                print("File is empty.")
+                exit(1)
 
-            df = df.drop(
-                df[df[col_names.TYPE] == "A"].index
-            )  # filter out rows with type A
-            self.split_dataset(df)
+    def split_dataset(self):
+        with Logger() as logger:
+            # filter out rows with type A
+            self.df.drop(self.df[self.df[col_names.TYPE] == "A"].index, inplace=True)
+            logger.info("TYPE A rows filtered out.")
+
+            groups = self.df.groupby(col_names.FILE)
+            for _, group in groups:
+                logger.debug(f"Group: {group}")
+                if len(group) > 1:
+                    self.train_df, self.test_df = train_test_split(
+                        group, test_size=0.2, shuffle=False
+                    )
+
             logger.info(f"training dataset: {len(self.train_df)}")
+            logger.info(f"{self.train_df}")
             logger.info(f"testing dataset: {len(self.test_df)}")
-
-    def split_dataset(self, df):
-        train_list = []
-        test_list = []
-
-        grouped = df.groupby(col_names.FILE)
-
-        for _, group in grouped:
-            if len(group) > 1:
-                train_group, test_group = train_test_split(
-                    group, train_size=0.8, shuffle=False
-                )
-                train_list.append(train_group)
-                test_list.append(test_group)
-
-        self.train_df = pd.concat(train_list)
-        self.test_df = pd.concat(test_list)
+            logger.info(f"{self.test_df}")
 
     def create_lookup_table(self, ja_version):
         with Logger() as logger:
