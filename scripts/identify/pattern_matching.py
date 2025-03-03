@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 01/03/2025
+Updated: 03/03/2025
 """
 
 from prefixspan import prefixspan
@@ -13,6 +13,7 @@ import pandas as pd
 from mlxtend.frequent_patterns import apriori
 from mlxtend.frequent_patterns import association_rules
 from mlxtend.preprocessing import TransactionEncoder
+from logger import Logger
 
 # from spade import spade as sp
 
@@ -32,9 +33,48 @@ class PatternMatchingMethod:
 
 
 class Apriori(PatternMatchingMethod):
-
     def train(self, db: Database):
-        pass
+        with Logger() as logger:
+            logger.info("Training Apriori algorithm ...")
+            data = db.get_train_df()
+            groups = data.groupby(col_names.FILE)
+
+            for _, group in groups:
+                self._train_group(group, db, logger)
+
+    def _train_group(self, group, db, logger):
+        group = group.astype(str)
+
+        app_name = group[col_names.APP_NAME].iloc[0]
+        logger.debug(f"Training for {app_name}, with length of {len(group)}")
+
+        processed = self.preprocess(group)
+
+        frequent_item_sets = apriori(processed, min_support=0.5, use_colnames=True)
+
+        if app_name not in db.frequent_patterns:
+            db.frequent_patterns[app_name] = []
+            logger.debug(f"Creating new entry for {app_name}")
+
+        db.frequent_patterns[app_name].append(frequent_item_sets)
+        logger.debug(
+            f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
+        )
+
+    def preprocess(self, data):
+        # serialize the data
+        data_list = data.values.tolist()
+
+        # transform into one-hot encoding
+        te = TransactionEncoder()
+        te_ary = te.fit(data_list).transform(data_list)
+        df = pd.DataFrame(te_ary, columns=te.columns_)
+
+        # convert to boolean values to ensure that the apriori algorithm works correctly,
+        # as it requires the input data to be in a binary format
+        df_encoded = df.astype(bool)
+
+        return df_encoded
 
     def identify(self, db):
         pass
