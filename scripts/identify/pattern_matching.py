@@ -40,26 +40,27 @@ class Apriori(PatternMatchingMethod):
             groups = data.groupby(col_names.FILE)
 
             for _, group in groups:
-                self._train_group(group, db, logger)
+                self._train_group(group, db)
 
-    def _train_group(self, group, db, logger):
-        group = group.astype(str)
+    def _train_group(self, group, db):
+        with Logger() as logger:
+            group = group.astype(str)
 
-        app_name = group[col_names.APP_NAME].iloc[0]
-        logger.debug(f"Training for {app_name}, with length of {len(group)}")
+            app_name = group[col_names.APP_NAME].iloc[0]
+            logger.debug(f"Training for {app_name}, with length of {len(group)}")
 
-        processed = self.preprocess(group)
+            processed = self.preprocess(group)
 
-        frequent_item_sets = apriori(processed, min_support=0.5, use_colnames=True)
+            frequent_item_sets = apriori(processed, min_support=0.5, use_colnames=True)
 
-        if app_name not in db.frequent_patterns:
-            db.frequent_patterns[app_name] = []
-            logger.debug(f"Creating new entry for {app_name}")
+            if app_name not in db.frequent_patterns:
+                db.frequent_patterns[app_name] = []
+                logger.debug(f"Creating new entry for {app_name}")
 
-        db.frequent_patterns[app_name].append(frequent_item_sets)
-        logger.debug(
-            f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
-        )
+            db.frequent_patterns[app_name].append(frequent_item_sets)
+            logger.debug(
+                f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
+            )
 
     def preprocess(self, data):
         # serialize the data
