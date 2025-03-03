@@ -5,7 +5,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 01/03/2025
+Updated: 03/03/2025
 """
 
 import constants as col_names
@@ -17,11 +17,11 @@ from sklearn.model_selection import train_test_split
 class Database:
     def __init__(self, dataset):
         self.dataset = dataset
-        self.df = None
+        self.df = {}
         self.lookup_table = {}  # lookup table for fingerprinting
         self.frequent_patterns = {}  # lookup table for frequent patterns
-        self.train_df = []
-        self.test_df = None
+        self.train_df = {}
+        self.test_df = {}
         self.ja_version = None
 
         self.handle_file(dataset)
@@ -47,18 +47,34 @@ class Database:
             self.df.drop(self.df[self.df[col_names.TYPE] == "A"].index, inplace=True)
             logger.info("TYPE A rows filtered out.")
 
+            train_list = []
+            test_list = []
+
             groups = self.df.groupby(col_names.FILE)
+            single_occurrence = 0
             for _, group in groups:
-                logger.debug(f"Group: {group}")
                 if len(group) > 1:
-                    self.train_df, self.test_df = train_test_split(
+                    train_group, test_group = train_test_split(
                         group, test_size=0.2, shuffle=False
                     )
 
+                    train_list.append(train_group)
+                    test_list.append(test_group)
+
+                else:
+                    single_occurrence += 1
+                    logger.warn(
+                        f"File: {group[col_names.FILE].values[0]} has only one row. Occurrence: {single_occurrence}"
+                    )
+
+            self.train_df = pd.concat(train_list)
+            self.test_df = pd.concat(test_list)
+
             logger.info(f"training dataset: {len(self.train_df)}")
-            logger.info(f"{self.train_df}")
+            logger.debug(f"{self.train_df}")
+
             logger.info(f"testing dataset: {len(self.test_df)}")
-            logger.info(f"{self.test_df}")
+            logger.debug(f"{self.test_df}")
 
     def create_lookup_table(self, ja_version):
         with Logger() as logger:
