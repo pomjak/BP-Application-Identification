@@ -4,11 +4,12 @@ Description: This file contains Logger class for creating log information.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 01/03/2025
+Updated: 03/03/2025
 """
 
 import inspect
 from datetime import datetime
+from constants import DEBUG_ENABLED
 import os
 
 
@@ -40,7 +41,8 @@ class Logger:
         self.log.flush()
 
     def debug(self, message):
-        self.__log("DEBUG", message)
+        if DEBUG_ENABLED:
+            self.__log("DEBUG", message)
 
     def info(self, message):
         self.__log("INFO", message)

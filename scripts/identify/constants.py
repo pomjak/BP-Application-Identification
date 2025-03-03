@@ -16,6 +16,7 @@ APP_NAME = "AppName"
 SNI = "SNI"
 TYPE = "Type"
 FILE = "Filename"
+DEBUG_ENABLED = True
 
 
 def get_keys(ja_version):

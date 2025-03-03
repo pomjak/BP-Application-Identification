@@ -42,6 +42,11 @@ class Apriori(PatternMatchingMethod):
             for _, group in groups:
                 self._train_group(group, db)
 
+            for app in db.frequent_patterns:
+                logger.debug(f"app: {app}\n")
+                for freq_item_set in db.frequent_patterns[app]:
+                    logger.debug(f"patterns: {freq_item_set}\n")
+
     def _train_group(self, group, db):
         with Logger() as logger:
             group = group.astype(str)
