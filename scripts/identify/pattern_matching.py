@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 03/03/2025
+Updated: 04/03/2025
 """
 
 from prefixspan import prefixspan
@@ -49,13 +49,10 @@ class Apriori(PatternMatchingMethod):
 
     def _train_group(self, group, db):
         with Logger() as logger:
-            group = group.astype(str)
-
             app_name = group[col_names.APP_NAME].iloc[0]
             logger.debug(f"Training for {app_name}, with length of {len(group)}")
 
-            processed = self.preprocess(group)
-
+            processed = self._preprocess(group)
             frequent_item_sets = apriori(processed, min_support=0.5, use_colnames=True)
 
             if app_name not in db.frequent_patterns:
@@ -67,7 +64,9 @@ class Apriori(PatternMatchingMethod):
                 f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
             )
 
-    def preprocess(self, data):
+    def _preprocess(self, data):
+        data = data.astype(str)
+
         # serialize the data
         data_list = data.values.tolist()
 
@@ -82,8 +81,30 @@ class Apriori(PatternMatchingMethod):
 
         return df_encoded
 
-    def identify(self, db):
-        pass
+    def identify(self, db: Database):
+        with Logger() as logger:
+            logger.info("Identifying using Apriori algorithm ...")
+
+            test_ds = db.get_test_df()
+            groups = test_ds.groupby(col_names.FILE)
+            for _, group in groups:
+                if len(group) > 1:
+                    processed_group = self._preprocess(group)
+
+                    # iterate over the test dataset
+                    frequent_item_sets = apriori(
+                        processed_group, min_support=0.5, use_colnames=True
+                    )
+                    logger.debug(frequent_item_sets)
+                    for app in db.frequent_patterns:
+                        for freq_item_set in db.frequent_patterns[app]:
+                            inter = pd.merge(
+                                frequent_item_sets,
+                                freq_item_set,
+                                how="inner",
+                                on="itemsets",
+                            )
+                    print(inter)
 
 
 class PrefixSpan(PatternMatchingMethod):
