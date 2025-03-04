@@ -4,7 +4,7 @@ Description: This file contains the config class which parses and stores command
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 18/11/2024
+Updated: 04/03/2025
 """
 
 import argparse
@@ -51,7 +51,7 @@ class Config:
             type=str,
             help="type of pattern searching algorithm [apriori, prefixspan or spade]",
             choices=["apriori", "a", "prefixspan", "p", "spade", "s"],
-            default="prefixspan",
+            default="apriori",
         )
 
         return parser.parse_args()
