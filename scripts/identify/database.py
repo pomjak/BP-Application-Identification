@@ -5,7 +5,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 03/03/2025
+Updated: 05/03/2025
 """
 
 import constants as col_names
@@ -25,6 +25,7 @@ class Database:
         self.ja_version = None
 
         self.handle_file(dataset)
+        self.filter_out_dataset()
         self.split_dataset()
 
     def handle_file(self, file):
@@ -41,12 +42,28 @@ class Database:
                 print("File is empty.")
                 exit(1)
 
-    def split_dataset(self):
+    def filter_out_dataset(self):
         with Logger() as logger:
             # filter out rows with type A
             self.df.drop(self.df[self.df[col_names.TYPE] == "A"].index, inplace=True)
             logger.info("TYPE A rows filtered out.")
 
+            # drop everything except these columns
+            self.df = self.df.filter(
+                [
+                    col_names.APP_NAME,
+                    col_names.FILE,
+                    col_names.JA3,
+                    col_names.JA3_S,
+                    col_names.JA4,
+                    col_names.JA4_S,
+                    col_names.SNI,
+                    col_names.ORG,
+                ]
+            )
+
+    def split_dataset(self):
+        with Logger() as logger:
             train_list = []
             test_list = []
 

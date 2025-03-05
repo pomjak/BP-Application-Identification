@@ -4,7 +4,7 @@ Description: This file contains methods for identification of applications using
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 19/02/2025
+Updated: 05/03/2025
 """
 
 import constants as col_names
@@ -38,7 +38,7 @@ class FingerprintingMethod:
 
     def display_statistics(self):
         correct, incorrect, total, len_cand = self.__get_statistics()
-        print("Real app name was found in set of candidates:")
+        print("JA:")
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")

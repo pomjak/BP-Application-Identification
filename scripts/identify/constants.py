@@ -4,7 +4,7 @@ Description: This file contains constants representing column names in the datas
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 17/11/2024
-Updated: 03/03/2025
+Updated: 05/03/2025
 """
 
 # modify the constants to match the dataset column names
@@ -16,6 +16,10 @@ APP_NAME = "AppName"
 SNI = "SNI"
 TYPE = "Type"
 FILE = "Filename"
+ORG = "OrgName"
+
+
+# DEBUG LOG LEVEL
 DEBUG_ENABLED = True
 
 
