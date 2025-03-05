@@ -23,16 +23,23 @@ import constants as col_names
 class PatternMatchingMethod:
     def __init__(self):
         self.correct = 0
+        self.first_guess = 0
+        self.second_guess = 0
+        self.third_guess = 0
         self.incorrect = 0
 
     def display_statistics(self):
         print("________________________________________________________")
         print("Pattern matching:")
         print(f"Correct: {self.correct}")
+        total = self.correct + self.incorrect
+        print(f"First guess: {self.first_guess} ({self.first_guess / total}%)")
+        print(f"Second guess: {self.second_guess} ({self.second_guess / total}%)")
+        print(f"Third guess: {self.third_guess} ({self.third_guess / total}%)")
         print(f"Incorrect: {self.incorrect}")
         print(f"Accuracy: {self.correct / (self.correct + self.incorrect)}")
         print(f"Error rate: {self.incorrect / (self.correct + self.incorrect)}")
-        print(f"Total: {self.correct + self.incorrect}")
+        print(f"Total: {total}")
         pass
 
     def identify(self, df):
@@ -64,7 +71,7 @@ class Apriori(PatternMatchingMethod):
             logger.debug(f"Training for {app_name}, with length of {len(group)}")
 
             processed = self._preprocess(group)
-            frequent_item_sets = apriori(processed, min_support=0.5, use_colnames=True)
+            frequent_item_sets = apriori(processed, min_support=0.01, use_colnames=True)
 
             if app_name not in db.frequent_patterns:
                 db.frequent_patterns[app_name] = pd.DataFrame()
@@ -105,30 +112,46 @@ class Apriori(PatternMatchingMethod):
 
                     # iterate over the test dataset
                     found_item_sets = apriori(
-                        processed_group, min_support=0.5, use_colnames=True
+                        processed_group, min_support=0.01, use_colnames=True
                     )
 
                     # check if the found frequent item sets are in the training dataset
                     found_item_set = set(found_item_sets["itemsets"])
-                    max_similarity = 0
+                    similarities = []
+
                     for app in db.frequent_patterns:
                         trained_items_set = set(db.frequent_patterns[app]["itemsets"])
                         if len(found_item_set):
                             similarity = len(
                                 found_item_set.intersection(trained_items_set)
                             ) / len(found_item_set.union(trained_items_set))
-                            if similarity > max_similarity:
-                                max_similarity = similarity
-                                max_app = app
+                            similarities.append((similarity, app))
+
+                    # Sort similarities in descending order and get the top 3
+                    top_similarities = sorted(similarities, reverse=True)[:3]
+                    max_similarity, max_app = top_similarities[0]
+                    real_app = group[col_names.APP_NAME].iloc[0]
 
                     logger.info(
-                        f"max similarity: {round(max_similarity, 2)}, max app: {max_app}, real app: {group[col_names.APP_NAME].iloc[0]}\n"
+                        f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app) for sim, app in top_similarities]}"
                     )
 
-                    if max_app == group[col_names.APP_NAME].iloc[0]:
-                        self.correct += 1
-                    else:
-                        self.incorrect += 1
+                    self._update_statistics(real_app, max_app, top_similarities)
+
+    def _update_statistics(self, real_app, max_app, top_similarities):
+        # check top 3 guesses
+        if top_similarities:
+            if real_app == top_similarities[0][1]:
+                self.first_guess += 1
+                self.correct += 1
+            elif len(top_similarities) > 1 and real_app == top_similarities[1][1]:
+                self.second_guess += 1
+                self.correct += 1
+            elif len(top_similarities) > 2 and real_app == top_similarities[2][1]:
+                self.third_guess += 1
+                self.correct += 1
+            else:
+                self.incorrect += 1
 
 
 class PrefixSpan(PatternMatchingMethod):
