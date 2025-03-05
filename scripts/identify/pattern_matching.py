@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 04/03/2025
+Updated: 05/03/2025
 """
 
 from prefixspan import prefixspan
@@ -26,6 +26,13 @@ class PatternMatchingMethod:
         self.incorrect = 0
 
     def display_statistics(self):
+        print("________________________________________________________")
+        print("Pattern matching:")
+        print(f"Correct: {self.correct}")
+        print(f"Incorrect: {self.incorrect}")
+        print(f"Accuracy: {self.correct / (self.correct + self.incorrect)}")
+        print(f"Error rate: {self.incorrect / (self.correct + self.incorrect)}")
+        print(f"Total: {self.correct + self.incorrect}")
         pass
 
     def identify(self, df):
@@ -42,10 +49,14 @@ class Apriori(PatternMatchingMethod):
             for _, group in groups:
                 self._train_group(group, db)
 
+            self._log_patterns(db)
+
+    def _log_patterns(self, db):
+        with Logger() as logger:
+            logger.debug("Frequent patterns found: \n")
             for app in db.frequent_patterns:
                 logger.debug(f"app: {app}\n")
-                for freq_item_set in db.frequent_patterns[app]:
-                    logger.debug(f"patterns: {freq_item_set}\n")
+                logger.debug(f"patterns: {db.frequent_patterns[app]}\n")
 
     def _train_group(self, group, db):
         with Logger() as logger:
@@ -56,15 +67,16 @@ class Apriori(PatternMatchingMethod):
             frequent_item_sets = apriori(processed, min_support=0.5, use_colnames=True)
 
             if app_name not in db.frequent_patterns:
-                db.frequent_patterns[app_name] = []
+                db.frequent_patterns[app_name] = pd.DataFrame()
                 logger.debug(f"Creating new entry for {app_name}")
 
-            db.frequent_patterns[app_name].append(frequent_item_sets)
+            db.frequent_patterns[app_name] = frequent_item_sets
             logger.debug(
                 f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
             )
 
     def _preprocess(self, data):
+        data = data.drop(columns=[col_names.FILE, col_names.APP_NAME])
         data = data.astype(str)
 
         # serialize the data
@@ -92,19 +104,31 @@ class Apriori(PatternMatchingMethod):
                     processed_group = self._preprocess(group)
 
                     # iterate over the test dataset
-                    frequent_item_sets = apriori(
+                    found_item_sets = apriori(
                         processed_group, min_support=0.5, use_colnames=True
                     )
-                    logger.debug(frequent_item_sets)
+
+                    # check if the found frequent item sets are in the training dataset
+                    found_item_set = set(found_item_sets["itemsets"])
+                    max_similarity = 0
                     for app in db.frequent_patterns:
-                        for freq_item_set in db.frequent_patterns[app]:
-                            inter = pd.merge(
-                                frequent_item_sets,
-                                freq_item_set,
-                                how="inner",
-                                on="itemsets",
-                            )
-                    print(inter)
+                        trained_items_set = set(db.frequent_patterns[app]["itemsets"])
+                        if len(found_item_set):
+                            similarity = len(
+                                found_item_set.intersection(trained_items_set)
+                            ) / len(found_item_set.union(trained_items_set))
+                            if similarity > max_similarity:
+                                max_similarity = similarity
+                                max_app = app
+
+                    logger.info(
+                        f"max similarity: {round(max_similarity, 2)}, max app: {max_app}, real app: {group[col_names.APP_NAME].iloc[0]}\n"
+                    )
+
+                    if max_app == group[col_names.APP_NAME].iloc[0]:
+                        self.correct += 1
+                    else:
+                        self.incorrect += 1
 
 
 class PrefixSpan(PatternMatchingMethod):
