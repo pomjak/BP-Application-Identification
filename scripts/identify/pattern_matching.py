@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 05/03/2025
+Updated: 07/03/2025
 """
 
 from prefixspan import prefixspan
@@ -32,15 +32,26 @@ class PatternMatchingMethod:
         print("________________________________________________________")
         print("Pattern matching:")
         print(f"Correct: {self.correct}")
-        total = self.correct + self.incorrect
-        print(f"First guess: {self.first_guess} ({self.first_guess / total}%)")
-        print(f"Second guess: {self.second_guess} ({self.second_guess / total}%)")
-        print(f"Third guess: {self.third_guess} ({self.third_guess / total}%)")
         print(f"Incorrect: {self.incorrect}")
-        print(f"Accuracy: {self.correct / (self.correct + self.incorrect)}")
-        print(f"Error rate: {self.incorrect / (self.correct + self.incorrect)}")
+        total = self.correct + self.incorrect
         print(f"Total: {total}")
-        pass
+        print()
+        print(
+            f"First guess: {self.first_guess} ({round(self.first_guess / self.correct, 2)})"
+        )
+        print(
+            f"Second guess: {self.second_guess} ({round(self.second_guess / self.correct, 2)})"
+        )
+        print(
+            f"Third guess: {self.third_guess} ({round(self.third_guess / self.correct, 2)})"
+        )
+        print()
+        print(f"Accuracy 1st guess : {round(self.first_guess / total, 4)}")
+        print(f"Accuracy 2nd guess : {round(self.second_guess / (total), 4)}")
+        print(f"Accuracy 3rd guess : {round(self.third_guess / (total), 4)}")
+        print(f"Accuracy overall: {round(self.correct / (total), 4)}")
+        print()
+        print(f"Error rate: {round(self.incorrect / (total), 4)}")
 
     def identify(self, df):
         raise NotImplementedError("This method should be overridden by subclasses")
@@ -68,16 +79,20 @@ class Apriori(PatternMatchingMethod):
     def _train_group(self, group, db):
         with Logger() as logger:
             app_name = group[col_names.APP_NAME].iloc[0]
+            index = group[col_names.FILE].iloc[0]
             logger.debug(f"Training for {app_name}, with length of {len(group)}")
 
             processed = self._preprocess(group)
-            frequent_item_sets = apriori(processed, min_support=0.01, use_colnames=True)
+            frequent_item_sets = apriori(
+                processed, min_support=0.01, use_colnames=True, max_len=3
+            )
 
             if app_name not in db.frequent_patterns:
-                db.frequent_patterns[app_name] = pd.DataFrame()
+                db.frequent_patterns[app_name] = {}
                 logger.debug(f"Creating new entry for {app_name}")
 
-            db.frequent_patterns[app_name] = frequent_item_sets
+            db.frequent_patterns[app_name][index] = pd.DataFrame(frequent_item_sets)
+
             logger.debug(
                 f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
             )
@@ -107,38 +122,39 @@ class Apriori(PatternMatchingMethod):
             test_ds = db.get_test_df()
             groups = test_ds.groupby(col_names.FILE)
             for _, group in groups:
-                if len(group) > 1:
-                    processed_group = self._preprocess(group)
+                processed_group = self._preprocess(group)
 
-                    # iterate over the test dataset
-                    found_item_sets = apriori(
-                        processed_group, min_support=0.01, use_colnames=True
-                    )
+                # iterate over the test dataset
+                found_item_sets = apriori(
+                    processed_group, min_support=0.01, use_colnames=True, max_len=3
+                )
 
-                    # check if the found frequent item sets are in the training dataset
-                    found_item_set = set(found_item_sets["itemsets"])
-                    similarities = []
+                # check if the found frequent item sets are in the training dataset
+                found_item_set = set(found_item_sets["itemsets"])
+                similarities = []
 
-                    for app in db.frequent_patterns:
-                        trained_items_set = set(db.frequent_patterns[app]["itemsets"])
+                for app in db.frequent_patterns:
+                    for index in db.frequent_patterns[app]:
+                        trained_items_set = set(
+                            db.frequent_patterns[app][index]["itemsets"]
+                        )
                         if len(found_item_set):
                             similarity = len(
                                 found_item_set.intersection(trained_items_set)
                             ) / len(found_item_set.union(trained_items_set))
-                            similarities.append((similarity, app))
+                            similarities.append((similarity, app, index))
 
-                    # Sort similarities in descending order and get the top 3
-                    top_similarities = sorted(similarities, reverse=True)[:3]
-                    max_similarity, max_app = top_similarities[0]
-                    real_app = group[col_names.APP_NAME].iloc[0]
+                # Sort similarities in descending order and get the top 3
+                top_similarities = sorted(similarities, reverse=True)[:3]
+                real_app = group[col_names.APP_NAME].iloc[0]
 
-                    logger.info(
-                        f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app) for sim, app in top_similarities]}"
-                    )
+                logger.info(
+                    f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app, index) for sim, app, index in top_similarities]}"
+                )
 
-                    self._update_statistics(real_app, max_app, top_similarities)
+                self._update_statistics(real_app, top_similarities)
 
-    def _update_statistics(self, real_app, max_app, top_similarities):
+    def _update_statistics(self, real_app, top_similarities):
         # check top 3 guesses
         if top_similarities:
             if real_app == top_similarities[0][1]:

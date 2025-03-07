@@ -5,7 +5,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 05/03/2025
+Updated: 07/03/2025
 """
 
 import constants as col_names
@@ -59,6 +59,17 @@ class Database:
                     col_names.JA4_S,
                     col_names.SNI,
                     col_names.ORG,
+                    # col_names.TLS_VERSION,
+                    # col_names.CIPHER_SUITE,
+                    # col_names.CLIENT_EXT,
+                    # col_names.CLIENT_SUPPORTED_GROUPS,
+                    # col_names.CLIENT_SUPPORTED_VERSIONS,
+                    # col_names.EC_FMT,
+                    # col_names.ALPN,
+                    # col_names.SIGNATURE_ALGORITHMS,
+                    # col_names.SERVER_CIPHER_SUITE,
+                    # col_names.SERVER_EXTENSIONS,
+                    # col_names.SERVER_SUPPORTED_VERSIONS,
                 ]
             )
 
@@ -72,7 +83,7 @@ class Database:
             for _, group in groups:
                 if len(group) > 1:
                     train_group, test_group = train_test_split(
-                        group, test_size=0.2, shuffle=False
+                        group, test_size=0.1, shuffle=False
                     )
 
                     train_list.append(train_group)
@@ -83,6 +94,7 @@ class Database:
                     logger.warn(
                         f"File: {group[col_names.FILE].values[0]} has only one row. Occurrence: {single_occurrence}"
                     )
+                    train_list.append(group)
 
             self.train_df = pd.concat(train_list)
             self.test_df = pd.concat(test_list)
