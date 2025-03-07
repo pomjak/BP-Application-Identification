@@ -73,7 +73,7 @@ class Apriori(PatternMatchingMethod):
         with Logger() as logger:
             logger.debug("Frequent patterns found: \n")
             for app in db.frequent_patterns:
-                logger.debug(f"app: {app}\n")
+                logger.debug(f"app: {app}")
                 logger.debug(f"patterns: {db.frequent_patterns[app]}\n")
 
     def _train_group(self, group, db):
@@ -98,7 +98,15 @@ class Apriori(PatternMatchingMethod):
             )
 
     def _preprocess(self, data):
-        data = data.drop(columns=[col_names.FILE, col_names.APP_NAME])
+        data = data.drop(
+            columns=[
+                col_names.FILE,
+                col_names.APP_NAME,
+                col_names.JA3_S,
+                col_names.JA4_S,
+                col_names.JA4,
+            ]
+        )
         data = data.astype(str)
 
         # serialize the data
@@ -144,7 +152,7 @@ class Apriori(PatternMatchingMethod):
                             ) / len(found_item_set.union(trained_items_set))
                             similarities.append((similarity, app, index))
 
-                # Sort similarities in descending order and get the top 3
+                # sort similarities in descending order and get the top 3
                 top_similarities = sorted(similarities, reverse=True)[:3]
                 real_app = group[col_names.APP_NAME].iloc[0]
 

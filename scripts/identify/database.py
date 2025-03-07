@@ -61,7 +61,7 @@ class Database:
                     col_names.ORG,
                     # col_names.TLS_VERSION,
                     # col_names.CIPHER_SUITE,
-                    # col_names.CLIENT_EXT,
+                    col_names.CLIENT_EXT,
                     # col_names.CLIENT_SUPPORTED_GROUPS,
                     # col_names.CLIENT_SUPPORTED_VERSIONS,
                     # col_names.EC_FMT,
@@ -82,8 +82,14 @@ class Database:
             single_occurrence = 0
             for _, group in groups:
                 if len(group) > 1:
+
+                    if len(group) > 5:
+                        test_size = 3 / len(group)
+                    else:
+                        test_size = 0.5
+
                     train_group, test_group = train_test_split(
-                        group, test_size=0.1, shuffle=False
+                        group, test_size=test_size, shuffle=False
                     )
 
                     train_list.append(train_group)
