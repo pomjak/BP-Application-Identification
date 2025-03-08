@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 07/03/2025
+Updated: 08/03/2025
 """
 
 from prefixspan import prefixspan
@@ -82,10 +82,7 @@ class Apriori(PatternMatchingMethod):
             index = group[col_names.FILE].iloc[0]
             logger.debug(f"Training for {app_name}, with length of {len(group)}")
 
-            processed = self._preprocess(group)
-            frequent_item_sets = apriori(
-                processed, min_support=0.01, use_colnames=True, max_len=3
-            )
+            frequent_item_sets = self.execute_apriori(group)
 
             if app_name not in db.frequent_patterns:
                 db.frequent_patterns[app_name] = {}
@@ -102,9 +99,7 @@ class Apriori(PatternMatchingMethod):
             columns=[
                 col_names.FILE,
                 col_names.APP_NAME,
-                col_names.JA3_S,
-                col_names.JA4_S,
-                col_names.JA4,
+                col_names.JA4_S,  # too ambiguous
             ]
         )
         data = data.astype(str)
@@ -123,6 +118,27 @@ class Apriori(PatternMatchingMethod):
 
         return df_encoded
 
+    def _postprocess(self, found_item_sets):
+        # drop every set that is 1 element long
+
+        found_item_sets.drop(
+            found_item_sets[found_item_sets["itemsets"].map(len) == 1].index,
+            inplace=True,
+        )
+        return found_item_sets
+
+    def execute_apriori(self, group):
+        processed_group = self._preprocess(group)
+
+        # iterate over the test dataset
+        found_item_sets = apriori(
+            processed_group, min_support=0.01, use_colnames=True, max_len=3
+        )
+
+        processed_item_sets = self._postprocess(found_item_sets)
+
+        return processed_item_sets
+
     def identify(self, db: Database):
         with Logger() as logger:
             logger.info("Identifying using Apriori algorithm ...")
@@ -130,12 +146,7 @@ class Apriori(PatternMatchingMethod):
             test_ds = db.get_test_df()
             groups = test_ds.groupby(col_names.FILE)
             for _, group in groups:
-                processed_group = self._preprocess(group)
-
-                # iterate over the test dataset
-                found_item_sets = apriori(
-                    processed_group, min_support=0.01, use_colnames=True, max_len=3
-                )
+                found_item_sets = self.execute_apriori(group)
 
                 # check if the found frequent item sets are in the training dataset
                 found_item_set = set(found_item_sets["itemsets"])
@@ -150,6 +161,15 @@ class Apriori(PatternMatchingMethod):
                             similarity = len(
                                 found_item_set.intersection(trained_items_set)
                             ) / len(found_item_set.union(trained_items_set))
+
+                            logger.debug("FOUND ITEM SET")
+                            logger.debug(found_item_set)
+                            logger.debug("TRAINED ITEM SET")
+                            logger.debug(trained_items_set)
+                            logger.debug("INTERSECTION")
+                            logger.debug(found_item_set.intersection(trained_items_set))
+                            logger.debug("\n")
+
                             similarities.append((similarity, app, index))
 
                 # sort similarities in descending order and get the top 3
