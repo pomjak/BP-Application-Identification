@@ -4,7 +4,7 @@ Description: This file contains Logger class for creating log information.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 03/03/2025
+Updated: 08/03/2025
 """
 
 import inspect
@@ -18,7 +18,6 @@ class Logger:
 
     def __init__(self, log_file=None):
         self.log_file = log_file or self.DEFAULT_LOG_FILE
-        # if log exists, clear it
 
     def __enter__(self):
         self.log = open(self.log_file, "a")

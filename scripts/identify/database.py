@@ -5,7 +5,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 07/03/2025
+Updated: 08/03/2025
 """
 
 import constants as col_names
@@ -83,15 +83,10 @@ class Database:
             for _, group in groups:
                 if len(group) > 1:
 
-                    if len(group) > 5:
-                        test_size = 3 / len(group)
-                    else:
-                        test_size = 0.5
-
                     train_group, test_group = train_test_split(
-                        group, test_size=test_size, shuffle=False
+                        group, test_size=0.25, shuffle=False
                     )
-
+                    # FIXME do not append to list, just group them
                     train_list.append(train_group)
                     test_list.append(test_group)
 
@@ -100,7 +95,7 @@ class Database:
                     logger.warn(
                         f"File: {group[col_names.FILE].values[0]} has only one row. Occurrence: {single_occurrence}"
                     )
-                    train_list.append(group)
+                    # train_list.append(group)
 
             self.train_df = pd.concat(train_list)
             self.test_df = pd.concat(test_list)
