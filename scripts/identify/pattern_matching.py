@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 08/03/2025
+Updated: 11/03/2025
 """
 
 from prefixspan import prefixspan
@@ -67,8 +67,6 @@ class Apriori(PatternMatchingMethod):
             for _, group in groups:
                 self._train_group(group, db)
 
-            self._log_patterns(db)
-
     def _log_patterns(self, db):
         with Logger() as logger:
             logger.debug("Frequent patterns found: \n")
@@ -79,7 +77,7 @@ class Apriori(PatternMatchingMethod):
     def _train_group(self, group, db):
         with Logger() as logger:
             app_name = group[col_names.APP_NAME].iloc[0]
-            index = group[col_names.FILE].iloc[0]
+            launch = group[col_names.FILE].iloc[0]
             logger.debug(f"Training for {app_name}, with length of {len(group)}")
 
             frequent_item_sets = self.execute_apriori(group)
@@ -88,8 +86,15 @@ class Apriori(PatternMatchingMethod):
                 db.frequent_patterns[app_name] = {}
                 logger.debug(f"Creating new entry for {app_name}")
 
-            db.frequent_patterns[app_name][index] = pd.DataFrame(frequent_item_sets)
+            # add the found patterns to the database if not already present
+            for filename in db.frequent_patterns[app_name]:
+                if db.frequent_patterns[app_name][filename].equals(
+                    pd.DataFrame(frequent_item_sets)
+                ):
+                    logger.debug(f"Found duplicate for {app_name}")
+                    return
 
+            db.frequent_patterns[app_name][launch] = pd.DataFrame(frequent_item_sets)
             logger.debug(
                 f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
             )
@@ -99,7 +104,7 @@ class Apriori(PatternMatchingMethod):
             columns=[
                 col_names.FILE,
                 col_names.APP_NAME,
-                col_names.JA4_S,  # too ambiguous
+                # col_names.JA4_S,  # too ambiguous, worse for 1st match accuracy but better for overall accuracy
             ]
         )
         data = data.astype(str)
@@ -118,26 +123,15 @@ class Apriori(PatternMatchingMethod):
 
         return df_encoded
 
-    def _postprocess(self, found_item_sets):
-        # drop every set that is 1 element long
-
-        found_item_sets.drop(
-            found_item_sets[found_item_sets["itemsets"].map(len) == 1].index,
-            inplace=True,
-        )
-        return found_item_sets
-
     def execute_apriori(self, group):
         processed_group = self._preprocess(group)
 
-        # iterate over the test dataset
-        found_item_sets = apriori(
-            processed_group, min_support=0.01, use_colnames=True, max_len=3
-        )
+        return apriori(processed_group, min_support=0.01, use_colnames=True, max_len=3)
 
-        processed_item_sets = self._postprocess(found_item_sets)
-
-        return processed_item_sets
+    def jaccard_similarity(self, set1, set2):
+        intersection = len(set1.intersection(set2))
+        union = len(set1.union(set2))
+        return intersection / union if union != 0 else 0
 
     def identify(self, db: Database):
         with Logger() as logger:
@@ -146,31 +140,22 @@ class Apriori(PatternMatchingMethod):
             test_ds = db.get_test_df()
             groups = test_ds.groupby(col_names.FILE)
             for _, group in groups:
-                found_item_sets = self.execute_apriori(group)
+                found_items_sets = self.execute_apriori(group)
 
                 # check if the found frequent item sets are in the training dataset
-                found_item_set = set(found_item_sets["itemsets"])
+                found_items_set = set(found_items_sets["itemsets"])
                 similarities = []
 
                 for app in db.frequent_patterns:
-                    for index in db.frequent_patterns[app]:
+                    for filename in db.frequent_patterns[app]:
                         trained_items_set = set(
-                            db.frequent_patterns[app][index]["itemsets"]
+                            db.frequent_patterns[app][filename]["itemsets"]
                         )
-                        if len(found_item_set):
-                            similarity = len(
-                                found_item_set.intersection(trained_items_set)
-                            ) / len(found_item_set.union(trained_items_set))
 
-                            logger.debug("FOUND ITEM SET")
-                            logger.debug(found_item_set)
-                            logger.debug("TRAINED ITEM SET")
-                            logger.debug(trained_items_set)
-                            logger.debug("INTERSECTION")
-                            logger.debug(found_item_set.intersection(trained_items_set))
-                            logger.debug("\n")
-
-                            similarities.append((similarity, app, index))
+                        similarity = self.jaccard_similarity(
+                            found_items_set, trained_items_set
+                        )
+                        similarities.append((similarity, app, filename))
 
                 # sort similarities in descending order and get the top 3
                 top_similarities = sorted(similarities, reverse=True)[:3]
@@ -196,6 +181,23 @@ class Apriori(PatternMatchingMethod):
                 self.correct += 1
             else:
                 self.incorrect += 1
+        else:
+            with Logger() as logger:
+                logger.warn("No similar apps found")
+
+    def calculate_uniqueness(self, trained_patterns):
+        # uniqueness is calculated as number of patterns that are uniquely assigned to a single app
+        # divided by the total number of distinct patterns
+        for app in trained_patterns:
+            total = 0
+            uniq_set = set()
+            for filename in trained_patterns[app]:
+                uniq_set.update(trained_patterns[app][filename])
+                total += len(trained_patterns[app][filename])
+
+            print(f"app: {app},file:{filename} total: {total}, uniq: {len(uniq_set)}")
+            total = 0
+            uniq_set = set()
 
 
 class PrefixSpan(PatternMatchingMethod):
