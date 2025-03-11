@@ -23,11 +23,18 @@ import constants as col_names
 class PatternMatchingMethod:
     def __init__(self):
         self.correct = 0
+        self.incorrect = 0
+
         self.first_guess = 0
         self.second_guess = 0
         self.third_guess = 0
-        self.incorrect = 0
-        self.uniq = 0
+
+        self.uniqueness = 0
+
+        self.used_once_count = 0
+        self.used_twice_count = 0
+        self.used_more_times = 0
+        self.used_never = 0
 
     def display_statistics(self):
         print("________________________________________________________")
@@ -51,9 +58,14 @@ class PatternMatchingMethod:
         print(f"Accuracy 2nd guess : {round(self.second_guess / (total), 4)}")
         print(f"Accuracy 3rd guess : {round(self.third_guess / (total), 4)}")
         print(f"Accuracy overall: {round(self.correct / (total), 4)}")
-        print()
         print(f"Error rate: {round(self.incorrect / (total), 4)}")
-        print(f"Number of unique patterns sets: {self.uniq}")
+        print()
+        print(f"Number of unique patterns sets: {self.uniq_count}")
+        print(f"Number of distinct sets used only once {self.used_once_count}")
+        print(f"Number of distinct sets used at least twice {self.used_twice_count}")
+        print(f"Number of distinct sets used more times {self.used_more_times}")
+        print(f"Number of distinct sets never used  {self.used_never}")
+        print(f"Uniqueness: {round(self.used_once_count / self.uniq_count ,4)}")
 
     def identify(self, df):
         raise NotImplementedError("This method should be overridden by subclasses")
@@ -74,7 +86,9 @@ class Apriori(PatternMatchingMethod):
             logger.debug("Frequent patterns found: \n")
             for app in db.frequent_patterns:
                 logger.debug(f"app: {app}")
-                logger.debug(f"patterns: {db.frequent_patterns[app]}\n")
+                for file in db.frequent_patterns[app]:
+                    logger.debug(f"filename: {file}")
+                    logger.debug(f"patterns: {db.frequent_patterns[app][file]}\n")
 
     def _train_group(self, group, db):
         with Logger() as logger:
@@ -170,41 +184,88 @@ class Apriori(PatternMatchingMethod):
                 real_app = group[col_names.APP_NAME].iloc[0]
 
                 logger.info(
-                    f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app, index) for sim, app, index in top_similarities]}"
+                    f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app, file) for sim, app, file in top_similarities]}"
                 )
 
-                self._update_statistics(real_app, top_similarities)
+                self._update_statistics(
+                    real_app, top_similarities, db.frequent_patterns
+                )
 
-            self.uniq = self.get_number_of_unique_patterns_sets(db.frequent_patterns)
+            self._log_patterns(db)
+            self.uniq_count = self.get_number_of_unique_patterns_sets(
+                db.frequent_patterns
+            )
+
             for app in db.frequent_patterns:
-                print(
-                    f"app: {app}, unique patterns: {self.get_number_of_unique_patterns_sets(db.frequent_patterns, app)}"
-                )
+                for file in db.frequent_patterns[app]:
+                    set_of_patterns = db.frequent_patterns[app][file]
 
-    def _update_statistics(self, real_app, top_similarities):
-        # check top 3 guesses
+                    if self.is_set_marked_as_used(set_of_patterns, 1):
+                        self.used_once_count += 1
+
+                    elif self.is_set_marked_as_used(set_of_patterns, 2):
+                        self.used_twice_count += 1
+
+                    elif self.is_set_marked_as_used(set_of_patterns, 0):
+                        self.used_never += 1
+                    else:
+                        self.used_more_times += 1
+
+    def _update_statistics(self, real_app, top_similarities, set_of_patterns):
         if top_similarities:
-            if real_app == top_similarities[0][1]:
-                self.first_guess += 1
-                self.correct += 1
-            elif len(top_similarities) > 1 and real_app == top_similarities[1][1]:
-                self.second_guess += 1
-                self.correct += 1
-            elif len(top_similarities) > 2 and real_app == top_similarities[2][1]:
-                self.third_guess += 1
-                self.correct += 1
-            else:
-                self.incorrect += 1
+            self._check_top_guesses(real_app, top_similarities, set_of_patterns)
         else:
-            with Logger() as logger:
-                logger.warn("No similar apps found")
+            self._log_no_similar_apps_found()
 
-    """
-    Returns the number of unique patterns sets in the database if app is None, 
-    otherwise returns the number of unique patterns sets for the given app.
-    """
+    def _check_top_guesses(self, real_app, top_similarities, set_of_patterns):
+        if real_app == top_similarities[0][1]:
+            self._update_correct_guess(1, set_of_patterns, top_similarities[0])
+
+        elif len(top_similarities) > 1 and real_app == top_similarities[1][1]:
+            self._update_correct_guess(2, set_of_patterns, top_similarities[1])
+
+        elif len(top_similarities) > 2 and real_app == top_similarities[2][1]:
+            self._update_correct_guess(3, set_of_patterns, top_similarities[2])
+
+        else:
+            self.incorrect += 1
+
+    def _update_correct_guess(self, guess_rank, set_of_patterns, similarity):
+        if guess_rank == 1:
+            self.first_guess += 1
+        elif guess_rank == 2:
+            self.second_guess += 1
+        elif guess_rank == 3:
+            self.third_guess += 1
+        self.correct += 1
+        self._mark_set_as_used(set_of_patterns[similarity[1]][similarity[2]])
+
+    def _log_no_similar_apps_found(self):
+        with Logger() as logger:
+            logger.warn("No similar apps found")
+
+    def _mark_set_as_used(self, used_set):
+        """
+        Mark set of patterns in training db as used for identifying the app correctly.
+        """
+        if "used" not in used_set.columns:
+            used_set["used"] = 0
+        used_set["used"] += 1
+
+    def is_set_marked_as_used(self, set_to_check, count=1):
+        if not isinstance(set_to_check, pd.DataFrame):
+            return False
+        if "used" not in set_to_check.columns and count == 0:
+            return True
+        if "used" not in set_to_check.columns and count != 0:
+            return False
+        return (set_to_check["used"] == count).any()
 
     def get_number_of_unique_patterns_sets(self, trained_patterns, app=None):
+        """
+        Returns the number of unique patterns sets in the database if app is None,
+        otherwise returns the number of unique patterns sets for the given app.
+        """
         uniq = 0
         if app:
             return len(trained_patterns[app])
