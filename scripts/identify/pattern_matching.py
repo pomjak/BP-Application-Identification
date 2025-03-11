@@ -27,6 +27,7 @@ class PatternMatchingMethod:
         self.second_guess = 0
         self.third_guess = 0
         self.incorrect = 0
+        self.uniq = 0
 
     def display_statistics(self):
         print("________________________________________________________")
@@ -52,6 +53,7 @@ class PatternMatchingMethod:
         print(f"Accuracy overall: {round(self.correct / (total), 4)}")
         print()
         print(f"Error rate: {round(self.incorrect / (total), 4)}")
+        print(f"Number of unique patterns sets: {self.uniq}")
 
     def identify(self, df):
         raise NotImplementedError("This method should be overridden by subclasses")
@@ -86,39 +88,45 @@ class Apriori(PatternMatchingMethod):
                 db.frequent_patterns[app_name] = {}
                 logger.debug(f"Creating new entry for {app_name}")
 
-            # add the found patterns to the database if not already present
-            for filename in db.frequent_patterns[app_name]:
-                if db.frequent_patterns[app_name][filename].equals(
-                    pd.DataFrame(frequent_item_sets)
-                ):
-                    logger.debug(f"Found duplicate for {app_name}")
-                    return
+            # If a duplicate is found, log it and stop checking.
+            for existing_launch in db.frequent_patterns[app_name]:
+                existing_df = db.frequent_patterns[app_name][existing_launch]
 
-            db.frequent_patterns[app_name][launch] = pd.DataFrame(frequent_item_sets)
-            logger.debug(
-                f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
-            )
+                if existing_df.equals(
+                    pd.DataFrame(frequent_item_sets)
+                ):  # Found a duplicate
+                    logger.debug(f"Found duplicate for {app_name}")
+                    break  # Stop checking further
+
+            else:
+                # If no duplicate was found, add the new pattern.
+                db.frequent_patterns[app_name][launch] = pd.DataFrame(
+                    frequent_item_sets
+                )
+                logger.debug(
+                    f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
+                )
 
     def _preprocess(self, data):
         data = data.drop(
             columns=[
                 col_names.FILE,
                 col_names.APP_NAME,
-                # col_names.JA4_S,  # too ambiguous, worse for 1st match accuracy but better for overall accuracy
+                # col_names.JA4_S,  # Too ambiguous, worse for 1st match accuracy but better for overall accuracy.
             ]
         )
         data = data.astype(str)
 
-        # serialize the data
+        # Serialize the data.
         data_list = data.values.tolist()
 
-        # transform into one-hot encoding
+        # Transform into one-hot encoding.
         te = TransactionEncoder()
         te_ary = te.fit(data_list).transform(data_list)
         df = pd.DataFrame(te_ary, columns=te.columns_)
 
-        # convert to boolean values to ensure that the apriori algorithm works correctly,
-        # as it requires the input data to be in a binary format
+        # Convert to boolean values to ensure that the apriori algorithm works correctly,
+        # as it requires the input data to be in a binary format.
         df_encoded = df.astype(bool)
 
         return df_encoded
@@ -167,6 +175,12 @@ class Apriori(PatternMatchingMethod):
 
                 self._update_statistics(real_app, top_similarities)
 
+            self.uniq = self.get_number_of_unique_patterns_sets(db.frequent_patterns)
+            for app in db.frequent_patterns:
+                print(
+                    f"app: {app}, unique patterns: {self.get_number_of_unique_patterns_sets(db.frequent_patterns, app)}"
+                )
+
     def _update_statistics(self, real_app, top_similarities):
         # check top 3 guesses
         if top_similarities:
@@ -185,19 +199,20 @@ class Apriori(PatternMatchingMethod):
             with Logger() as logger:
                 logger.warn("No similar apps found")
 
-    def calculate_uniqueness(self, trained_patterns):
-        # uniqueness is calculated as number of patterns that are uniquely assigned to a single app
-        # divided by the total number of distinct patterns
-        for app in trained_patterns:
-            total = 0
-            uniq_set = set()
-            for filename in trained_patterns[app]:
-                uniq_set.update(trained_patterns[app][filename])
-                total += len(trained_patterns[app][filename])
+    """
+    Returns the number of unique patterns sets in the database if app is None, 
+    otherwise returns the number of unique patterns sets for the given app.
+    """
 
-            print(f"app: {app},file:{filename} total: {total}, uniq: {len(uniq_set)}")
-            total = 0
-            uniq_set = set()
+    def get_number_of_unique_patterns_sets(self, trained_patterns, app=None):
+        uniq = 0
+        if app:
+            return len(trained_patterns[app])
+        else:
+            for app in trained_patterns:
+                # Db has already only distinct sets of patterns for each app.
+                uniq += len(trained_patterns[app])
+        return uniq
 
 
 class PrefixSpan(PatternMatchingMethod):
