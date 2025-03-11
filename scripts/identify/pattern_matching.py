@@ -65,7 +65,7 @@ class PatternMatchingMethod:
         print(f"Number of distinct sets used at least twice {self.used_twice_count}")
         print(f"Number of distinct sets used more times {self.used_more_times}")
         print(f"Number of distinct sets never used  {self.used_never}")
-        print(f"Uniqueness: {round(self.used_once_count / self.uniq_count ,4)}")
+        print(f"Uniqueness: {round(self.used_once_count / self.uniq_count, 4)}")
 
     def identify(self, df):
         raise NotImplementedError("This method should be overridden by subclasses")
@@ -117,6 +117,7 @@ class Apriori(PatternMatchingMethod):
                 db.frequent_patterns[app_name][launch] = pd.DataFrame(
                     frequent_item_sets
                 )
+
                 logger.debug(
                     f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
                 )
@@ -148,12 +149,45 @@ class Apriori(PatternMatchingMethod):
     def execute_apriori(self, group):
         processed_group = self._preprocess(group)
 
-        return apriori(processed_group, min_support=0.01, use_colnames=True, max_len=3)
+        freq_items_set = apriori(
+            processed_group, min_support=0.01, use_colnames=True, max_len=3
+        )
+        return freq_items_set
 
+    # 0.82
     def jaccard_similarity(self, set1, set2):
         intersection = len(set1.intersection(set2))
         union = len(set1.union(set2))
         return intersection / union if union != 0 else 0
+
+    # 0.82
+    def dice_coefficient(self, set1, set2):
+        intersection = len(set1.intersection(set2))
+        return (
+            (2 * intersection) / (len(set1) + len(set2))
+            if (len(set1) + len(set2)) != 0
+            else 0
+        )
+
+    # 0.76
+    def overlap_coefficient(self, set1, set2):
+        intersection = len(set1.intersection(set2))
+        return (
+            intersection / min(len(set1), len(set2))
+            if min(len(set1), len(set2)) != 0
+            else 0
+        )
+
+    # 0.82 0.8673
+    def tversky_index(self, set1, set2, alpha=0.75, beta=0.25):
+        intersection = len(set1.intersection(set2))
+        only_in_set1 = len(set1 - set2)
+        only_in_set2 = len(set2 - set1)
+        return (
+            intersection / (intersection + alpha * only_in_set1 + beta * only_in_set2)
+            if (intersection + alpha * only_in_set1 + beta * only_in_set2) != 0
+            else 0
+        )
 
     def identify(self, db: Database):
         with Logger() as logger:
@@ -179,7 +213,7 @@ class Apriori(PatternMatchingMethod):
                         )
                         similarities.append((similarity, app, filename))
 
-                # sort similarities in descending order and get the top 3
+                # Sort similarities in descending order and get the top 3.
                 top_similarities = sorted(similarities, reverse=True)[:3]
                 real_app = group[col_names.APP_NAME].iloc[0]
 
@@ -195,21 +229,23 @@ class Apriori(PatternMatchingMethod):
             self.uniq_count = self.get_number_of_unique_patterns_sets(
                 db.frequent_patterns
             )
+            self.count_usage(db)
 
-            for app in db.frequent_patterns:
-                for file in db.frequent_patterns[app]:
-                    set_of_patterns = db.frequent_patterns[app][file]
+    def count_usage(self, db):
+        for app in db.frequent_patterns:
+            for file in db.frequent_patterns[app]:
+                set_of_patterns = db.frequent_patterns[app][file]
 
-                    if self.is_set_marked_as_used(set_of_patterns, 1):
-                        self.used_once_count += 1
+                if self.is_set_marked_as_used(set_of_patterns, 1):
+                    self.used_once_count += 1
 
-                    elif self.is_set_marked_as_used(set_of_patterns, 2):
-                        self.used_twice_count += 1
+                elif self.is_set_marked_as_used(set_of_patterns, 2):
+                    self.used_twice_count += 1
 
-                    elif self.is_set_marked_as_used(set_of_patterns, 0):
-                        self.used_never += 1
-                    else:
-                        self.used_more_times += 1
+                elif self.is_set_marked_as_used(set_of_patterns, 0):
+                    self.used_never += 1
+                else:
+                    self.used_more_times += 1
 
     def _update_statistics(self, real_app, top_similarities, set_of_patterns):
         if top_similarities:
@@ -233,10 +269,13 @@ class Apriori(PatternMatchingMethod):
     def _update_correct_guess(self, guess_rank, set_of_patterns, similarity):
         if guess_rank == 1:
             self.first_guess += 1
+
         elif guess_rank == 2:
             self.second_guess += 1
+
         elif guess_rank == 3:
             self.third_guess += 1
+
         self.correct += 1
         self._mark_set_as_used(set_of_patterns[similarity[1]][similarity[2]])
 
@@ -252,13 +291,17 @@ class Apriori(PatternMatchingMethod):
             used_set["used"] = 0
         used_set["used"] += 1
 
+    # FIXME - ensure that it is working correctly
     def is_set_marked_as_used(self, set_to_check, count=1):
         if not isinstance(set_to_check, pd.DataFrame):
             return False
+
         if "used" not in set_to_check.columns and count == 0:
             return True
+
         if "used" not in set_to_check.columns and count != 0:
             return False
+
         return (set_to_check["used"] == count).any()
 
     def get_number_of_unique_patterns_sets(self, trained_patterns, app=None):
