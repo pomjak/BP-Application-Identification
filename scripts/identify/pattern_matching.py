@@ -63,7 +63,7 @@ class PatternMatchingMethod:
 
         print(f"Number of unique patterns sets: {self.uniq_count}")
         print("Usage of distinct sets:")
-        print(f"{'Usage':<20}{'1st Guess':<15}{'2nd Guess':<15}{'3rd Guess':<15}")
+        print(f"{'Usage':<20}{'1st Guess':<12}{'2nd Guess':<12}{'3rd Guess':<12}")
 
         categories = [
             ("Used only once", self.used_once_count),
@@ -73,7 +73,11 @@ class PatternMatchingMethod:
         ]
 
         for label, data in categories:
-            print(f"{label:<20}{data[0]:<15}{data[1]:<15}{data[2]:<15}")
+            total = sum(data) if sum(data) > 0 else 1
+            percentages = [f"{(x / total):.4f}" for x in data]
+            print(
+                f"{label:<20}{data[0]:<3}({percentages[0]:<5}) {data[1]:<3}({percentages[1]:<5}) {data[2]:<3}({percentages[2]:<5})"
+            )
 
         print(f"Uniqueness: {round(self.used_once_count[0] / self.uniq_count, 4)}")
 
@@ -100,6 +104,29 @@ class Apriori(PatternMatchingMethod):
                     logger.debug(f"filename: {file}")
                     logger.debug(f"patterns: {db.frequent_patterns[app][file]}\n")
 
+    def _init_db_for_app(self, app, db):
+        if app in db.frequent_patterns:
+            return
+        else:
+            db.frequent_patterns[app] = {}
+            with Logger() as logger:
+                logger.debug(f"Creating new entry for {app}")
+
+    def _add_patterns_to_db(self, app, launch, patterns, db):
+        with Logger() as logger:
+            for existing_launch in db.frequent_patterns[app]:
+                existing_df = db.frequent_patterns[app][existing_launch]
+
+                if existing_df.equals(pd.DataFrame(patterns)):  # Found a duplicate
+                    logger.debug(f"Found duplicate for {app}")
+                    break  # Stop checking further.
+
+            else:
+                # If no duplicate was found, add the new pattern.
+                db.frequent_patterns[app][launch] = pd.DataFrame(patterns)
+
+                logger.debug(f"Found {len(patterns)} frequent item sets for {app} \n")
+
     def _train_group(self, group, db):
         with Logger() as logger:
             app_name = group[col_names.APP_NAME].iloc[0]
@@ -108,36 +135,17 @@ class Apriori(PatternMatchingMethod):
 
             frequent_item_sets = self.execute_apriori(group)
 
-            if app_name not in db.frequent_patterns:
-                db.frequent_patterns[app_name] = {}
-                logger.debug(f"Creating new entry for {app_name}")
+            self._init_db_for_app(app_name, db)
 
             # If a duplicate is found, log it and stop checking.
-            for existing_launch in db.frequent_patterns[app_name]:
-                existing_df = db.frequent_patterns[app_name][existing_launch]
-
-                if existing_df.equals(
-                    pd.DataFrame(frequent_item_sets)
-                ):  # Found a duplicate
-                    logger.debug(f"Found duplicate for {app_name}")
-                    break  # Stop checking further
-
-            else:
-                # If no duplicate was found, add the new pattern.
-                db.frequent_patterns[app_name][launch] = pd.DataFrame(
-                    frequent_item_sets
-                )
-
-                logger.debug(
-                    f"Found {len(frequent_item_sets)} frequent item sets for {app_name} \n"
-                )
+            self._add_patterns_to_db(app_name, launch, frequent_item_sets, db)
 
     def _preprocess(self, data):
         data = data.drop(
             columns=[
                 col_names.FILE,
                 col_names.APP_NAME,
-                # col_names.JA4_S,  # Too ambiguous, worse for 1st match accuracy but better for overall accuracy.
+                # col_names.JA4_S,  # Too ambiguous, ignoring.
             ]
         )
         data = data.astype(str)
@@ -189,7 +197,7 @@ class Apriori(PatternMatchingMethod):
         )
 
     # 0.82 0.8673
-    def tversky_index(self, set1, set2, alpha=0.75, beta=0.25):
+    def tversky_index(self, set1, set2, alpha=0.5, beta=0.5):
         intersection = len(set1.intersection(set2))
         only_in_set1 = len(set1 - set2)
         only_in_set2 = len(set2 - set1)
@@ -199,66 +207,67 @@ class Apriori(PatternMatchingMethod):
             else 0
         )
 
+    def calculate_similarity(self, found_items_sets, db):
+        # Create set to calculate similarity.
+        found_items_set = set(found_items_sets["itemsets"])
+        if len(found_items_set) != len(found_items_sets["itemsets"]):
+            exit(1, "Loss of information")
+
+        similarities = []
+
+        # Iterate over whole db to calculate similarity.
+        for app in db.frequent_patterns:
+            for filename in db.frequent_patterns[app]:
+                trained_items_set = set(db.frequent_patterns[app][filename]["itemsets"])
+
+                similarity = self.jaccard_similarity(found_items_set, trained_items_set)
+                similarities.append((similarity, app, filename))
+
+        # Sort similarities in descending order and get the top 3.
+        return sorted(similarities, reverse=True)[:3]
+
     def identify(self, db: Database):
         with Logger() as logger:
             logger.info("Identifying using Apriori algorithm ...")
-
+            # Retrieve test data and group it by app for more clarity in the logs.
             test_ds = db.get_test_df()
             groups = test_ds.groupby(col_names.FILE)
+
             for _, group in groups:
+                # Find frequent patterns for each group (one app).
                 found_items_sets = self.execute_apriori(group)
+                # Retrieve top 3 most similar apps.
+                top_similarities = self.calculate_similarity(found_items_sets, db)
 
-                # check if the found frequent item sets are in the training dataset
-                found_items_set = set(found_items_sets["itemsets"])
-                similarities = []
-
-                for app in db.frequent_patterns:
-                    for filename in db.frequent_patterns[app]:
-                        trained_items_set = set(
-                            db.frequent_patterns[app][filename]["itemsets"]
-                        )
-
-                        similarity = self.jaccard_similarity(
-                            found_items_set, trained_items_set
-                        )
-                        similarities.append((similarity, app, filename))
-
-                # Sort similarities in descending order and get the top 3.
-                top_similarities = sorted(similarities, reverse=True)[:3]
                 real_app = group[col_names.APP_NAME].iloc[0]
-
                 logger.info(
                     f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app, file) for sim, app, file in top_similarities]}"
                 )
-
+                # Update statistics based on the results.
                 self._update_statistics(
                     real_app, top_similarities, db.frequent_patterns
                 )
-
-            self._log_patterns(db)
+            # Retrieve number of unique patterns sets in the database.
             self.uniq_count = self.get_number_of_unique_patterns_sets(
                 db.frequent_patterns
             )
+            # Count how often each set is used and its corresponding guess position.
             self.count_usage(db)
 
     def count_usage(self, db):
         for app in db.frequent_patterns:
             for file in db.frequent_patterns[app]:
-                # iterate over 1 to 3 guesses
+                # Iterate over top 3 guesses and update stats.
                 for pos in range(1, 4):
-                    if self._get_usage_of_set(app, file, pos) == 1:
-                        self.used_once_count[pos - 1] += 1
-
-                    elif self._get_usage_of_set(app, file, pos) == 2:
-                        self.used_twice_count[pos - 1] += 1
-
-                    elif self._get_usage_of_set(app, file, pos) == 0:
-                        self.used_never[pos - 1] += 1
-
-                    elif self._get_usage_of_set(app, file, pos) > 2:
-                        self.used_more_times[pos - 1] += 1
-                    else:
-                        raise ValueError("Invalid usage count. Shouldn't happen.")
+                    match self._get_usage_of_set(app, file, pos):
+                        case 0:
+                            self.used_never[pos - 1] += 1
+                        case 1:
+                            self.used_once_count[pos - 1] += 1
+                        case 2:
+                            self.used_twice_count[pos - 1] += 1
+                        case default:  # noqa: F841
+                            self.used_more_times[pos - 1] += 1
 
     def _update_statistics(self, real_app, top_similarities, set_of_patterns):
         if top_similarities:
@@ -267,6 +276,7 @@ class Apriori(PatternMatchingMethod):
             self._log_no_similar_apps_found()
 
     def _check_top_guesses(self, real_app, top_similarities, set_of_patterns):
+        # If real app is 1st guess, update stats. Else check 2nd and 3rd guess.
         if real_app == top_similarities[0][1]:
             self._update_correct_guess(1, set_of_patterns, top_similarities[0])
 
@@ -280,17 +290,19 @@ class Apriori(PatternMatchingMethod):
             self.incorrect += 1
 
     def _update_correct_guess(self, guess_rank, set_of_patterns, similarity):
-        if guess_rank == 1:
-            self._mark_set_as_used(similarity[1], similarity[2], 1)
-            self.first_guess += 1
+        # Update stats based on which guess was correct.
+        match guess_rank:
+            case 1:
+                self._mark_set_as_used(similarity[1], similarity[2], 1)
+                self.first_guess += 1
 
-        elif guess_rank == 2:
-            self.second_guess += 1
-            self._mark_set_as_used(similarity[1], similarity[2], 2)
+            case 2:
+                self.second_guess += 1
+                self._mark_set_as_used(similarity[1], similarity[2], 2)
 
-        elif guess_rank == 3:
-            self.third_guess += 1
-            self._mark_set_as_used(similarity[1], similarity[2], 3)
+            case 3:
+                self.third_guess += 1
+                self._mark_set_as_used(similarity[1], similarity[2], 3)
 
         self.correct += 1
 
