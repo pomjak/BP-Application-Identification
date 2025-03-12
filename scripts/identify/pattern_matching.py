@@ -31,10 +31,10 @@ class PatternMatchingMethod:
 
         self.uniqueness = 0
         self.usage_of_patterns = {}
-        self.used_once_count = 0
-        self.used_twice_count = 0
-        self.used_more_times = 0
-        self.used_never = 0
+        self.used_once_count = [0, 0, 0]
+        self.used_twice_count = [0, 0, 0]
+        self.used_more_times = [0, 0, 0]
+        self.used_never = [0, 0, 0]
 
     def display_statistics(self):
         print("________________________________________________________")
@@ -60,12 +60,22 @@ class PatternMatchingMethod:
         print(f"Accuracy overall: {round(self.correct / (total), 4)}")
         print(f"Error rate: {round(self.incorrect / (total), 4)}")
         print()
+
         print(f"Number of unique patterns sets: {self.uniq_count}")
-        print(f"Number of distinct sets used only once {self.used_once_count}")
-        print(f"Number of distinct sets used at least twice {self.used_twice_count}")
-        print(f"Number of distinct sets used more times {self.used_more_times}")
-        print(f"Number of distinct sets never used  {self.used_never}")
-        print(f"Uniqueness: {round(self.used_once_count / self.uniq_count, 4)}")
+        print("Usage of distinct sets:")
+        print(f"{'Usage':<20}{'1st Guess':<15}{'2nd Guess':<15}{'3rd Guess':<15}")
+
+        categories = [
+            ("Used only once", self.used_once_count),
+            ("Used at least twice", self.used_twice_count),
+            ("Used more times", self.used_more_times),
+            ("Never used", self.used_never),
+        ]
+
+        for label, data in categories:
+            print(f"{label:<20}{data[0]:<15}{data[1]:<15}{data[2]:<15}")
+
+        print(f"Uniqueness: {round(self.used_once_count[0] / self.uniq_count, 4)}")
 
     def identify(self, df):
         raise NotImplementedError("This method should be overridden by subclasses")
@@ -234,16 +244,21 @@ class Apriori(PatternMatchingMethod):
     def count_usage(self, db):
         for app in db.frequent_patterns:
             for file in db.frequent_patterns[app]:
-                if self._get_usage_of_set(app, file, 1) == 1:
-                    self.used_once_count += 1
+                # iterate over 1 to 3 guesses
+                for pos in range(1, 4):
+                    if self._get_usage_of_set(app, file, pos) == 1:
+                        self.used_once_count[pos - 1] += 1
 
-                elif self._get_usage_of_set(app, file, 1) == 2:
-                    self.used_twice_count += 1
+                    elif self._get_usage_of_set(app, file, pos) == 2:
+                        self.used_twice_count[pos - 1] += 1
 
-                elif self._get_usage_of_set(app, file, 1) == 0:
-                    self.used_never += 1
-                else:
-                    self.used_more_times += 1
+                    elif self._get_usage_of_set(app, file, pos) == 0:
+                        self.used_never[pos - 1] += 1
+
+                    elif self._get_usage_of_set(app, file, pos) > 2:
+                        self.used_more_times[pos - 1] += 1
+                    else:
+                        raise ValueError("Invalid usage count. Shouldn't happen.")
 
     def _update_statistics(self, real_app, top_similarities, set_of_patterns):
         if top_similarities:
