@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 12/03/2025
+Updated: 13/03/2025
 """
 
 from prefixspan import prefixspan
@@ -14,6 +14,8 @@ from mlxtend.frequent_patterns import apriori
 from mlxtend.frequent_patterns import association_rules
 from mlxtend.preprocessing import TransactionEncoder
 from logger import Logger
+import heapq
+import numpy as np
 
 # from spade import spade as sp
 
@@ -133,7 +135,7 @@ class Apriori(PatternMatchingMethod):
             launch = group[col_names.FILE].iloc[0]
             logger.debug(f"Training for {app_name}, with length of {len(group)}")
 
-            frequent_item_sets = self.execute_apriori(group)
+            frequent_item_sets = self._execute_apriori(group)
 
             self._init_db_for_app(app_name, db)
 
@@ -164,7 +166,7 @@ class Apriori(PatternMatchingMethod):
 
         return df_encoded
 
-    def execute_apriori(self, group):
+    def _execute_apriori(self, group):
         processed_group = self._preprocess(group)
 
         freq_items_set = apriori(
@@ -173,13 +175,13 @@ class Apriori(PatternMatchingMethod):
         return freq_items_set
 
     # 0.82
-    def jaccard_similarity(self, set1, set2):
+    def _jaccard_similarity(self, set1, set2):
         intersection = len(set1.intersection(set2))
         union = len(set1.union(set2))
         return intersection / union if union != 0 else 0
 
     # 0.82
-    def dice_coefficient(self, set1, set2):
+    def _dice_coefficient(self, set1, set2):
         intersection = len(set1.intersection(set2))
         return (
             (2 * intersection) / (len(set1) + len(set2))
@@ -188,7 +190,7 @@ class Apriori(PatternMatchingMethod):
         )
 
     # 0.76
-    def overlap_coefficient(self, set1, set2):
+    def _overlap_coefficient(self, set1, set2):
         intersection = len(set1.intersection(set2))
         return (
             intersection / min(len(set1), len(set2))
@@ -197,7 +199,7 @@ class Apriori(PatternMatchingMethod):
         )
 
     # 0.82 0.8673
-    def tversky_index(self, set1, set2, alpha=0.5, beta=0.5):
+    def _tversky_index(self, set1, set2, alpha=0.5, beta=0.5):
         intersection = len(set1.intersection(set2))
         only_in_set1 = len(set1 - set2)
         only_in_set2 = len(set2 - set1)
@@ -207,24 +209,43 @@ class Apriori(PatternMatchingMethod):
             else 0
         )
 
-    def calculate_similarity(self, found_items_sets, db):
-        # Create set to calculate similarity.
-        found_items_set = set(found_items_sets["itemsets"])
-        if len(found_items_set) != len(found_items_sets["itemsets"]):
-            exit(1, "Loss of information")
-
+    def _calculate_similarity(self, found_items_sets, db):
         similarities = []
+        # Split Dataframes into low and high support sets using median.
+        threshold = found_items_sets["support"].median()
+        found_low_support = found_items_sets[found_items_sets["support"] < threshold]
+        found_high_support = found_items_sets[found_items_sets["support"] >= threshold]
 
-        # Iterate over whole db to calculate similarity.
+        found_low_support_set = frozenset(found_low_support["itemsets"])
+        found_high_support_set = frozenset(found_high_support["itemsets"])
+
         for app in db.frequent_patterns:
-            for filename in db.frequent_patterns[app]:
-                trained_items_set = set(db.frequent_patterns[app][filename]["itemsets"])
+            for launch in db.frequent_patterns[app]:
+                train_items_sets = db.frequent_patterns[app][launch]
+                threshold = train_items_sets["support"].median()
 
-                similarity = self.jaccard_similarity(found_items_set, trained_items_set)
-                similarities.append((similarity, app, filename))
+                train_low_support = train_items_sets[
+                    train_items_sets["support"] < threshold
+                ]
+                train_high_support = train_items_sets[
+                    train_items_sets["support"] >= threshold
+                ]
 
-        # Sort similarities in descending order and get the top 3.
-        return sorted(similarities, reverse=True)[:3]
+                train_low_support_set = frozenset(train_low_support["itemsets"])
+                train_high_support_set = frozenset(train_high_support["itemsets"])
+
+                low_support_sim = self._jaccard_similarity(
+                    found_low_support_set, train_low_support_set
+                )
+                high_support_sim = self._jaccard_similarity(
+                    found_high_support_set, train_high_support_set
+                )
+
+                similarity = high_support_sim * 0.75 + low_support_sim * 0.25
+                similarities.append((similarity, app, launch))
+
+        # Return top 3 highest similarities using heapq for efficiency.
+        return heapq.nlargest(3, similarities)
 
     def identify(self, db: Database):
         with Logger() as logger:
@@ -235,9 +256,9 @@ class Apriori(PatternMatchingMethod):
 
             for _, group in groups:
                 # Find frequent patterns for each group (one app).
-                found_items_sets = self.execute_apriori(group)
+                found_items_sets = self._execute_apriori(group)
                 # Retrieve top 3 most similar apps.
-                top_similarities = self.calculate_similarity(found_items_sets, db)
+                top_similarities = self._calculate_similarity(found_items_sets, db)
 
                 real_app = group[col_names.APP_NAME].iloc[0]
                 logger.info(
@@ -248,13 +269,14 @@ class Apriori(PatternMatchingMethod):
                     real_app, top_similarities, db.frequent_patterns
                 )
             # Retrieve number of unique patterns sets in the database.
-            self.uniq_count = self.get_number_of_unique_patterns_sets(
+            self.uniq_count = self._get_number_of_unique_patterns_sets(
                 db.frequent_patterns
             )
             # Count how often each set is used and its corresponding guess position.
-            self.count_usage(db)
+            self._count_usage(db)
+            self._log_usage_of_every_launch()
 
-    def count_usage(self, db):
+    def _count_usage(self, db):
         for app in db.frequent_patterns:
             for file in db.frequent_patterns[app]:
                 # Iterate over top 3 guesses and update stats.
@@ -293,8 +315,8 @@ class Apriori(PatternMatchingMethod):
         # Update stats based on which guess was correct.
         match guess_rank:
             case 1:
-                self._mark_set_as_used(similarity[1], similarity[2], 1)
                 self.first_guess += 1
+                self._mark_set_as_used(similarity[1], similarity[2], 1)
 
             case 2:
                 self.second_guess += 1
@@ -328,7 +350,7 @@ class Apriori(PatternMatchingMethod):
         else:
             return 0
 
-    def get_number_of_unique_patterns_sets(self, trained_patterns, app=None):
+    def _get_number_of_unique_patterns_sets(self, trained_patterns, app=None):
         """
         Returns the number of unique patterns sets in the database if app is None,
         otherwise returns the number of unique patterns sets for the given app.
@@ -341,6 +363,19 @@ class Apriori(PatternMatchingMethod):
                 # Db has already only distinct sets of patterns for each app.
                 uniq += len(trained_patterns[app])
         return uniq
+
+    def _log_usage_of_every_launch(self):
+        with Logger() as logger:
+            logger.debug("Usage of patterns:")
+            count = 0
+            for app in self.usage_of_patterns:
+                logger.debug(f"App: {app}")
+                for file in self.usage_of_patterns[app]:
+                    count += 1
+                    logger.debug(f"File: {file}")
+                    logger.debug(f"Usage: {self.usage_of_patterns[app][file]}")
+                    logger.debug(count)
+                    logger.debug("\n")
 
 
 class PrefixSpan(PatternMatchingMethod):
