@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 13/03/2025
+Updated: 15/03/2025
 """
 
 from prefixspan import prefixspan
@@ -16,6 +16,8 @@ from mlxtend.preprocessing import TransactionEncoder
 from logger import Logger
 import heapq
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import CountVectorizer
 
 # from spade import spade as sp
 
@@ -174,13 +176,43 @@ class Apriori(PatternMatchingMethod):
         )
         return freq_items_set
 
-    # 0.82
+    # 0.8427
     def _jaccard_similarity(self, set1, set2):
         intersection = len(set1.intersection(set2))
         union = len(set1.union(set2))
         return intersection / union if union != 0 else 0
 
-    # 0.82
+    def fast_weighted_jaccard(df1, df2):
+        df1_dict = dict(zip(df1["itemsets"].apply(frozenset), df1["support"]))
+        df2_dict = dict(zip(df2["itemsets"].apply(frozenset), df2["support"]))
+
+        # Compute intersection & union first to reduce dictionary lookups
+        intersection_keys = df1_dict.keys() & df2_dict.keys()
+        union_keys = df1_dict.keys() | df2_dict.keys()
+
+        min_support_sum = sum(min(df1_dict[k], df2_dict[k]) for k in intersection_keys)
+        max_support_sum = sum(
+            max(df1_dict.get(k, 0), df2_dict.get(k, 0)) for k in union_keys
+        )
+
+        return min_support_sum / max_support_sum if max_support_sum else 0
+
+    # 0.8315
+    def _cosine_similarity(self, set1, set2):
+        # Handle empty sets
+        if not set1 or not set2:
+            return 0.0
+
+        vectorizer = CountVectorizer(
+            tokenizer=lambda x: x, lowercase=False, token_pattern=None
+        )
+        try:
+            matrix = vectorizer.fit_transform([list(set1), list(set2)])
+            return cosine_similarity(matrix)[0, 1]
+        except ValueError:
+            return 0.0
+
+    # 0.8427
     def _dice_coefficient(self, set1, set2):
         intersection = len(set1.intersection(set2))
         return (
@@ -189,7 +221,7 @@ class Apriori(PatternMatchingMethod):
             else 0
         )
 
-    # 0.76
+    # 0.7528
     def _overlap_coefficient(self, set1, set2):
         intersection = len(set1.intersection(set2))
         return (
@@ -198,7 +230,7 @@ class Apriori(PatternMatchingMethod):
             else 0
         )
 
-    # 0.82 0.8673
+    # 0.84.27
     def _tversky_index(self, set1, set2, alpha=0.5, beta=0.5):
         intersection = len(set1.intersection(set2))
         only_in_set1 = len(set1 - set2)
@@ -211,19 +243,32 @@ class Apriori(PatternMatchingMethod):
 
     def _calculate_similarity(self, found_items_sets, db):
         similarities = []
-        # Split Dataframes into low and high support sets using median.
-        threshold = found_items_sets["support"].median()
+
+        # Compute threshold using mode, handle empty mode case
+        mode_values = found_items_sets["support"].mode()
+        threshold = mode_values[0] if not mode_values.empty else 0.0
+
+        # Split DataFrame into low and high support sets
         found_low_support = found_items_sets[found_items_sets["support"] < threshold]
         found_high_support = found_items_sets[found_items_sets["support"] >= threshold]
 
+        # Convert itemsets to frozenset for fast Jaccard computation
         found_low_support_set = frozenset(found_low_support["itemsets"])
         found_high_support_set = frozenset(found_high_support["itemsets"])
 
-        for app in db.frequent_patterns:
-            for launch in db.frequent_patterns[app]:
-                train_items_sets = db.frequent_patterns[app][launch]
-                threshold = train_items_sets["support"].median()
+        # Precompute total support and weight fractions
+        total_support = found_items_sets["support"].sum()
+        high_support_weight = found_high_support["support"].sum() / total_support
+        low_support_weight = found_low_support["support"].sum() / total_support
+        cross_support_weight = (high_support_weight + low_support_weight) / 2
 
+        for app, launches in db.frequent_patterns.items():
+            for launch, train_items_sets in launches.items():
+                # Compute threshold for training set
+                mode_values = train_items_sets["support"].mode()
+                threshold = mode_values[0] if not mode_values.empty else 0.0
+
+                # Split training set into low and high support
                 train_low_support = train_items_sets[
                     train_items_sets["support"] < threshold
                 ]
@@ -231,20 +276,39 @@ class Apriori(PatternMatchingMethod):
                     train_items_sets["support"] >= threshold
                 ]
 
+                # Convert to frozensets
                 train_low_support_set = frozenset(train_low_support["itemsets"])
                 train_high_support_set = frozenset(train_high_support["itemsets"])
 
+                # Compute Jaccard similarities
                 low_support_sim = self._jaccard_similarity(
                     found_low_support_set, train_low_support_set
                 )
                 high_support_sim = self._jaccard_similarity(
                     found_high_support_set, train_high_support_set
                 )
+                cross_support_sim = self._jaccard_similarity(
+                    found_low_support_set, train_high_support_set
+                )
+                cross_support_sim2 = self._jaccard_similarity(
+                    found_high_support_set, train_low_support_set
+                )
 
-                similarity = high_support_sim * 0.75 + low_support_sim * 0.25
-                similarities.append((similarity, app, launch))
+                # Compute final weighted similarity score
+                similarity = (
+                    high_support_sim * high_support_weight
+                    + low_support_sim * low_support_weight
+                    + cross_support_sim * cross_support_weight
+                    + cross_support_sim2 * cross_support_weight
+                )
 
-        # Return top 3 highest similarities using heapq for efficiency.
+                # Maintain a min-heap of size 3 for top similarities
+                if len(similarities) < 3:
+                    heapq.heappush(similarities, (similarity, app, launch))
+                else:
+                    heapq.heappushpop(similarities, (similarity, app, launch))
+
+        # Return top 3 highest similarities
         return heapq.nlargest(3, similarities)
 
     def identify(self, db: Database):
@@ -277,11 +341,11 @@ class Apriori(PatternMatchingMethod):
             self._log_usage_of_every_launch()
 
     def _count_usage(self, db):
-        for app in db.frequent_patterns:
-            for file in db.frequent_patterns[app]:
+        for app, launches in db.frequent_patterns.items():
+            for launch in launches:
                 # Iterate over top 3 guesses and update stats.
                 for pos in range(1, 4):
-                    match self._get_usage_of_set(app, file, pos):
+                    match self._get_usage_of_set(app, launch, pos):
                         case 0:
                             self.used_never[pos - 1] += 1
                         case 1:
