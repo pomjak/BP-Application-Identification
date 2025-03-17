@@ -4,7 +4,7 @@ Description: This file contains methods for identification of applications using
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 05/03/2025
+Updated: 17/03/2025
 """
 
 import constants as col_names
@@ -38,7 +38,7 @@ class FingerprintingMethod:
 
     def display_statistics(self):
         correct, incorrect, total, len_cand = self.__get_statistics()
-        print("JA:")
+        print("JA fingerprinting:")
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
@@ -47,7 +47,7 @@ class FingerprintingMethod:
 
         correct, incorrect, total, len_cand_comb = self.__get_statistics_combination()
         print("________________________________________________________")
-        print("combination of JA + JAS + SNI")
+        print("Combination of JA + JAS + SNI")
         print("Real app name was found in set of candidates:")
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
@@ -74,7 +74,7 @@ class FingerprintingMethod:
 
 
 class JA3(FingerprintingMethod):
-    def identify(self, db: Database):
+    def identify(self, db: Database, context=False):
         # iterate over test dataset and check if app name is in set of candidates
         for _, row in db.test_df.iterrows():
             # extract JA3 hash and app name from one row of ds

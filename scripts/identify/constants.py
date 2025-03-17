@@ -4,7 +4,7 @@ Description: This file contains constants representing column names in the datas
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 17/11/2024
-Updated: 07/03/2025
+Updated: 17/03/2025
 """
 
 # modify the constants to match the dataset column names
@@ -32,7 +32,7 @@ SERVER_SUPPORTED_VERSIONS = "ServerSupportedVersions"
 
 
 # DEBUG LOG LEVEL
-DEBUG_ENABLED = True
+DEBUG_ENABLED = False
 
 
 def get_keys(ja_version):

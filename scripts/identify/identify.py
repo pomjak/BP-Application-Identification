@@ -4,7 +4,7 @@ Description: Main file for identification of applications using JA3/4 fingerprin
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 11/03/2025
+Updated: 17/03/2025
 """
 
 from logger import Logger
@@ -34,8 +34,7 @@ def main():
         logger.info("Identifying using fingerprinting method...")
 
         fingerprinting.identify(db)
-        # fingerprinting.display_statistics()
-        # db.log_lookup_table()  # [DEBUG]
+        fingerprinting.display_statistics()
 
         match config.pattern_algorithm:
             case "apriori":

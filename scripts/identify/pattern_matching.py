@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 15/03/2025
+Updated: 17/03/2025
 """
 
 from prefixspan import prefixspan
@@ -314,7 +314,7 @@ class Apriori(PatternMatchingMethod):
     def identify(self, db: Database):
         with Logger() as logger:
             logger.info("Identifying using Apriori algorithm ...")
-            # Retrieve test data and group it by app for more clarity in the logs.
+            # Retrieve test data and group it by app.
             test_ds = db.get_test_df()
             groups = test_ds.groupby(col_names.FILE)
 
@@ -332,13 +332,13 @@ class Apriori(PatternMatchingMethod):
                 self._update_statistics(
                     real_app, top_similarities, db.frequent_patterns
                 )
+
             # Retrieve number of unique patterns sets in the database.
             self.uniq_count = self._get_number_of_unique_patterns_sets(
                 db.frequent_patterns
             )
             # Count how often each set is used and its corresponding guess position.
             self._count_usage(db)
-            self._log_usage_of_every_launch()
 
     def _count_usage(self, db):
         for app, launches in db.frequent_patterns.items():
