@@ -13,10 +13,23 @@ from constants import APP_NAME
 
 class ResultMerger:
     def __init__(self):
-        pass
+        self.correct = 0
+        self.incorrect = 0
+        self.correct_len = 0
+        self.incorrect_len = 0
 
     def display_statistics(self):
-        pass
+        total = self.correct + self.incorrect
+        print("________________________________________________________")
+        print("Fingerprinting with context:")
+        print(f"Correct: {self.correct}")
+        print(f"Incorrect: {self.incorrect}")
+        print(f"Total: {total}")
+        print(f"Accuracy overall: {round(self.correct / (total), 4)}")
+        print(f"Error rate: {round(self.incorrect / (total), 4)}")
+        print(
+            f"Average number of candidates: {round((self.correct_len + self.incorrect_len) / total, 2)}"
+        )
 
     def merge(self, fingerprinting_results, context_results, test_df):
         with Logger() as logger:
@@ -24,11 +37,20 @@ class ResultMerger:
                 logger.error("Results are not the same length.")
 
             for index, row in test_df.iterrows():
-                logger.debug(f"App: {row[APP_NAME]}")
-                ja_candidates = fingerprinting_results[index]["ja_candidates"]
-                combined_candidates = fingerprinting_results[index][
+                # Get candidates from fingerprinting and context matching
+                fingerprinting_candidates = fingerprinting_results[index][
                     "combined_candidates"
                 ]
-                logger.debug(f"candidate: {ja_candidates}")
-                logger.debug(f"combined_candidates: {combined_candidates}")
-                logger.debug(f"apriori: {context_results[index]}")
+                # Get candidates from context matching.
+                context_candidates = context_results[index]
+
+                logger.debug(
+                    f"{row[APP_NAME]}:{context_candidates}:{fingerprinting_candidates}"
+                )
+                final_candidates = fingerprinting_candidates.union(context_candidates)
+                if row[APP_NAME] in final_candidates:
+                    self.correct += 1
+                    self.correct_len += len(final_candidates)
+                else:
+                    self.incorrect += 1
+                    self.incorrect_len += len(final_candidates)

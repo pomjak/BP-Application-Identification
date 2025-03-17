@@ -149,7 +149,6 @@ class Apriori(PatternMatchingMethod):
             columns=[
                 col_names.FILE,
                 col_names.APP_NAME,
-                # col_names.JA4_S,  # Too ambiguous, ignoring.
             ]
         )
         data = data.astype(str)
@@ -242,7 +241,7 @@ class Apriori(PatternMatchingMethod):
         )
 
     def _calculate_similarity(self, found_items_sets, db):
-        similarities = []
+        similarities = {}
 
         # Compute threshold using mode, handle empty mode case
         mode_values = found_items_sets["support"].mode()
@@ -302,14 +301,10 @@ class Apriori(PatternMatchingMethod):
                     + cross_support_sim2 * cross_support_weight
                 )
 
-                # Maintain a min-heap of size 3 for top similarities
-                if len(similarities) < 3:
-                    heapq.heappush(similarities, (similarity, app, launch))
-                else:
-                    heapq.heappushpop(similarities, (similarity, app, launch))
-
+                if app not in similarities or similarity > similarities[app][0]:
+                    similarities[app] = (similarity, app, launch)
         # Return top 3 highest similarities
-        return heapq.nlargest(3, similarities)
+        return sorted(similarities.values(), key=lambda x: x[0], reverse=True)[:3]
 
     def identify(self, db: Database):
         with Logger() as logger:
@@ -327,7 +322,7 @@ class Apriori(PatternMatchingMethod):
 
                 real_app = group[col_names.APP_NAME].iloc[0]
                 logger.info(
-                    f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app, file) for sim, app, file in top_similarities]}"
+                    f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app) for sim, app, _ in top_similarities]}"
                 )
                 # Update statistics based on the results.
                 self._update_statistics(
@@ -335,9 +330,9 @@ class Apriori(PatternMatchingMethod):
                 )
                 for index, row in group.iterrows():
                     if index not in results:
-                        results[index] = []
+                        results[index] = set()
                     for sim in top_similarities:
-                        results[index].append(sim[1])
+                        results[index].add(sim[1])
 
             # Retrieve number of unique patterns sets in the database.
             self.uniq_count = self._get_number_of_unique_patterns_sets(
