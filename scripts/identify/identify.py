@@ -10,8 +10,8 @@ Updated: 17/03/2025
 from logger import Logger
 from config import Config
 from database import Database
-from fingerprinting import JA3, JA4
-from pattern_matching import Apriori, SPADE, PrefixSpan
+from fingerprinting import FingerprintingMethod
+from pattern_matching import Apriori
 import time
 
 
@@ -22,27 +22,17 @@ def main():
         config = Config()
         db = Database(config.dataset)
 
-        logger.info("Selecting JA version ...")
+        logger.info(f"Selecting JA{config.ja_version} version")
 
-        if config.ja_version == 4:
-            fingerprinting = JA4()
-            db.create_lookup_table(4)
-        else:
-            fingerprinting = JA3()
-            db.create_lookup_table(3)
+        fingerprinting = FingerprintingMethod(config.ja_version)
+        db.create_lookup_table(config.ja_version)
 
         logger.info("Identifying using fingerprinting method...")
 
         fingerprinting.identify(db)
         fingerprinting.display_statistics()
 
-        match config.pattern_algorithm:
-            case "apriori":
-                context = Apriori()
-            case "prefixspan":
-                context = PrefixSpan()
-            case "spade":
-                context = SPADE()
+        context = Apriori()
 
         context.train(db)
         context.identify(db)

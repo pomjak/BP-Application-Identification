@@ -440,25 +440,3 @@ class Apriori(PatternMatchingMethod):
                     logger.debug(f"Usage: {self.usage_of_patterns[app][file]}")
                     logger.debug(count)
                     logger.debug("\n")
-
-
-class PrefixSpan(PatternMatchingMethod):
-    def __init__(self):
-        pass
-
-    def train(self, db):
-        pass
-
-    def identify(self, db):
-        pass
-
-
-class SPADE(PatternMatchingMethod):
-    def __init__(self):
-        pass
-
-    def train(self, db):
-        pass
-
-    def identify(self, db):
-        pass

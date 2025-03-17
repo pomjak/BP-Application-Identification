@@ -1,18 +1,25 @@
 """
 File: config.py
-Description: This file contains methods for identification of applications using JA3/4 fingerprinting.
+Description: This file contains methods for identification of applications using ja/4 fingerprinting.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
 Updated: 17/03/2025
 """
 
-import constants as col_names
+from constants import get_keys, APP_NAME
 from database import Database
+from logger import Logger
 
 
 class FingerprintingMethod:
-    def __init__(self):
+    def __init__(self, version):
+        self.JA_key, self.JAS_key, self.SNI_key = get_keys(version)
+        with Logger() as logger:
+            logger.info(f"JA version set: {version}")
+            logger.debug(f"JA key: {self.JA_key}")
+            logger.debug(f"JAS key: {self.JAS_key}")
+            logger.debug(f"SNI key: {self.SNI_key}")
         self.correct = 0
         self.incorrect = 0
         self.correct_combination = 0
@@ -69,29 +76,24 @@ class FingerprintingMethod:
         else:
             self.incorrect_combination += 1
 
-    def identify(self, db: Database):
-        raise NotImplementedError("This method should be overridden by derived classes")
-
-
-class JA3(FingerprintingMethod):
     def identify(self, db: Database, context=False):
         # iterate over test dataset and check if app name is in set of candidates
         for _, row in db.test_df.iterrows():
-            # extract JA3 hash and app name from one row of ds
-            ja3 = row[col_names.JA3]
-            ja3s = row[col_names.JA3_S]
-            sni = row[col_names.SNI]
-            appname = row[col_names.APP_NAME]
+            # extract JA hash and app name from one row of ds
+            ja = row[self.JA_key]
+            jas = row[self.JAS_key]
+            sni = row[self.SNI_key]
+            appname = row[APP_NAME]
 
             # get sets of candidates for each fingerprint
-            ja3_candidates = db.get_app(col_names.JA3, ja3)
-            ja3s_candidates = db.get_app(col_names.JA3_S, ja3s)
-            sni_candidates = db.get_app(col_names.SNI, sni)
+            ja_candidates = db.get_app(self.JA_key, ja)
+            jas_candidates = db.get_app(self.JAS_key, jas)
+            sni_candidates = db.get_app(self.SNI_key, sni)
 
             # filter out empty sets
             non_empty_sets = [
                 candidates
-                for candidates in [ja3_candidates, ja3s_candidates, sni_candidates]
+                for candidates in [ja_candidates, jas_candidates, sni_candidates]
                 if candidates
             ]
 
@@ -102,32 +104,5 @@ class JA3(FingerprintingMethod):
                 candidates = set()
 
             # check if candidates match real app name and update statistics accordingly
-            self._resolve_and_update(appname, ja3_candidates)
-            self._resolve_and_update_combination(appname, candidates)
-
-
-class JA4(FingerprintingMethod):
-    def identify(self, db: Database):
-        for _, row in db.test_df.iterrows():
-            ja4 = row[col_names.JA4]
-            ja4s = row[col_names.JA4_S]
-            sni = row[col_names.SNI]
-            appname = row[col_names.APP_NAME]
-
-            ja4_candidates = db.get_app(col_names.JA4, ja4)
-            ja4s_candidates = db.get_app(col_names.JA4_S, ja4s)
-            sni_candidates = db.get_app(col_names.SNI, sni)
-
-            non_empty_sets = [
-                candidates
-                for candidates in [ja4_candidates, ja4s_candidates, sni_candidates]
-                if candidates
-            ]
-            if non_empty_sets:
-                candidates = set.intersection(*non_empty_sets)
-            else:
-                candidates = set()
-
-            self._resolve_and_update(appname, ja4_candidates)
-
+            self._resolve_and_update(appname, ja_candidates)
             self._resolve_and_update_combination(appname, candidates)
