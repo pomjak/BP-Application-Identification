@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 15/03/2025
+Updated: 17/03/2025
 """
 
 from prefixspan import prefixspan
@@ -149,7 +149,6 @@ class Apriori(PatternMatchingMethod):
             columns=[
                 col_names.FILE,
                 col_names.APP_NAME,
-                # col_names.JA4_S,  # Too ambiguous, ignoring.
             ]
         )
         data = data.astype(str)
@@ -230,7 +229,7 @@ class Apriori(PatternMatchingMethod):
             else 0
         )
 
-    # 0.84.27
+    # 0.8427
     def _tversky_index(self, set1, set2, alpha=0.5, beta=0.5):
         intersection = len(set1.intersection(set2))
         only_in_set1 = len(set1 - set2)
@@ -242,7 +241,7 @@ class Apriori(PatternMatchingMethod):
         )
 
     def _calculate_similarity(self, found_items_sets, db):
-        similarities = []
+        similarities = {}
 
         # Compute threshold using mode, handle empty mode case
         mode_values = found_items_sets["support"].mode()
@@ -302,21 +301,18 @@ class Apriori(PatternMatchingMethod):
                     + cross_support_sim2 * cross_support_weight
                 )
 
-                # Maintain a min-heap of size 3 for top similarities
-                if len(similarities) < 3:
-                    heapq.heappush(similarities, (similarity, app, launch))
-                else:
-                    heapq.heappushpop(similarities, (similarity, app, launch))
-
+                if app not in similarities or similarity > similarities[app][0]:
+                    similarities[app] = (similarity, app, launch)
         # Return top 3 highest similarities
-        return heapq.nlargest(3, similarities)
+        return sorted(similarities.values(), key=lambda x: x[0], reverse=True)[:3]
 
     def identify(self, db: Database):
         with Logger() as logger:
             logger.info("Identifying using Apriori algorithm ...")
-            # Retrieve test data and group it by app for more clarity in the logs.
+            # Retrieve test data and group it by app.
             test_ds = db.get_test_df()
             groups = test_ds.groupby(col_names.FILE)
+            results = {}
 
             for _, group in groups:
                 # Find frequent patterns for each group (one app).
@@ -326,19 +322,25 @@ class Apriori(PatternMatchingMethod):
 
                 real_app = group[col_names.APP_NAME].iloc[0]
                 logger.info(
-                    f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app, file) for sim, app, file in top_similarities]}"
+                    f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app) for sim, app, _ in top_similarities]}"
                 )
                 # Update statistics based on the results.
                 self._update_statistics(
                     real_app, top_similarities, db.frequent_patterns
                 )
+                for index, row in group.iterrows():
+                    if index not in results:
+                        results[index] = set()
+                    for sim in top_similarities:
+                        results[index].add(sim[1])
+
             # Retrieve number of unique patterns sets in the database.
             self.uniq_count = self._get_number_of_unique_patterns_sets(
                 db.frequent_patterns
             )
             # Count how often each set is used and its corresponding guess position.
             self._count_usage(db)
-            self._log_usage_of_every_launch()
+            db.context_results = results
 
     def _count_usage(self, db):
         for app, launches in db.frequent_patterns.items():
@@ -440,25 +442,3 @@ class Apriori(PatternMatchingMethod):
                     logger.debug(f"Usage: {self.usage_of_patterns[app][file]}")
                     logger.debug(count)
                     logger.debug("\n")
-
-
-class PrefixSpan(PatternMatchingMethod):
-    def __init__(self):
-        pass
-
-    def train(self, db):
-        pass
-
-    def identify(self, db):
-        pass
-
-
-class SPADE(PatternMatchingMethod):
-    def __init__(self):
-        pass
-
-    def train(self, db):
-        pass
-
-    def identify(self, db):
-        pass

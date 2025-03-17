@@ -4,7 +4,7 @@ Description: This file contains constants representing column names in the datas
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 17/11/2024
-Updated: 07/03/2025
+Updated: 17/03/2025
 """
 
 # modify the constants to match the dataset column names

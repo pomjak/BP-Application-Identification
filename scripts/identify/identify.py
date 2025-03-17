@@ -4,15 +4,16 @@ Description: Main file for identification of applications using JA3/4 fingerprin
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 11/03/2025
+Updated: 17/03/2025
 """
 
 from logger import Logger
 from config import Config
 from database import Database
-from fingerprinting import JA3, JA4
-from pattern_matching import Apriori, SPADE, PrefixSpan
+from fingerprinting import FingerprintingMethod
+from pattern_matching import Apriori
 import time
+from result_merger import ResultMerger
 
 
 def main():
@@ -22,32 +23,20 @@ def main():
         config = Config()
         db = Database(config.dataset)
 
-        logger.info("Selecting JA version ...")
-
-        if config.ja_version == 4:
-            fingerprinting = JA4()
-            db.create_lookup_table(4)
-        else:
-            fingerprinting = JA3()
-            db.create_lookup_table(3)
-
-        logger.info("Identifying using fingerprinting method...")
+        fingerprinting = FingerprintingMethod(config.ja_version)
+        db.create_lookup_table(config.ja_version)
 
         fingerprinting.identify(db)
-        # fingerprinting.display_statistics()
-        # db.log_lookup_table()  # [DEBUG]
+        fingerprinting.display_statistics()
 
-        match config.pattern_algorithm:
-            case "apriori":
-                context = Apriori()
-            case "prefixspan":
-                context = PrefixSpan()
-            case "spade":
-                context = SPADE()
-
+        context = Apriori()
         context.train(db)
         context.identify(db)
         context.display_statistics()
+
+        result_merger = ResultMerger()
+        result_merger.merge(db.fingerprinting_results, db.context_results, db.test_df)
+        result_merger.display_statistics()
 
         logger.info("[FINISH]")
 

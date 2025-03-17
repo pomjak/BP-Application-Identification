@@ -4,7 +4,7 @@ Description: This file contains the config class which parses and stores command
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 04/03/2025
+Updated: 17/03/2025
 """
 
 import argparse
@@ -24,10 +24,6 @@ class Config:
             self.ja_version = args.ja_version
             logger.info(f"JA version set: {self.ja_version}")
 
-            self.pattern_algorithm = args.pattern_algorithm
-            self.__map_algos()
-            logger.info(f"Pattern algorithm set: {self.pattern_algorithm}")
-
     def __parse_arguments(self):
         parser = argparse.ArgumentParser(
             description="Identify applications using JA3/4 fingerprints and frequent pattern matching algorithms in network traffic"
@@ -45,19 +41,4 @@ class Config:
             default=4,
         )
 
-        parser.add_argument(
-            "-p",
-            "--pattern_algorithm",
-            type=str,
-            help="type of pattern searching algorithm [apriori, prefixspan or spade]",
-            choices=["apriori", "a", "prefixspan", "p", "spade", "s"],
-            default="apriori",
-        )
-
         return parser.parse_args()
-
-    # map abbreviations to complete names
-    def __map_algos(self):
-        pattern_map = {"a": "apriori", "p": "prefixspan", "s": "spade"}
-        if self.pattern_algorithm in pattern_map:
-            self.pattern_algorithm = pattern_map[self.pattern_algorithm]
