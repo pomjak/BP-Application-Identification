@@ -13,6 +13,7 @@ from database import Database
 from fingerprinting import FingerprintingMethod
 from pattern_matching import Apriori
 import time
+from result_merger import ResultMerger
 
 
 def main():
@@ -37,6 +38,10 @@ def main():
         context.train(db)
         context.identify(db)
         context.display_statistics()
+
+        result_merger = ResultMerger()
+        result_merger.merge(db.fingerprinting_results, db.context_results, db.test_df)
+        result_merger.display_statistics()
 
         logger.info("[FINISH]")
 
