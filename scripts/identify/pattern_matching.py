@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 17/03/2025
+Updated: 18/03/2025
 """
 
 from prefixspan import prefixspan
@@ -301,8 +301,11 @@ class Apriori(PatternMatchingMethod):
                     + cross_support_sim2 * cross_support_weight
                 )
 
-                if app not in similarities or similarity > similarities[app][0]:
+                if app not in similarities:
                     similarities[app] = (similarity, app, launch)
+                elif similarity > similarities[app][0]:
+                    old_sim = similarities[app][0]
+                    similarities[app] = ((similarity + old_sim) / 2, app, launch)
         # Return top 3 highest similarities
         return sorted(similarities.values(), key=lambda x: x[0], reverse=True)[:3]
 
