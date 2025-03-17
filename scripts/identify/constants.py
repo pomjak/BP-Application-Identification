@@ -32,7 +32,7 @@ SERVER_SUPPORTED_VERSIONS = "ServerSupportedVersions"
 
 
 # DEBUG LOG LEVEL
-DEBUG_ENABLED = False
+DEBUG_ENABLED = True
 
 
 def get_keys(ja_version):
