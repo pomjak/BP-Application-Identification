@@ -23,18 +23,13 @@ def main():
         config = Config()
         db = Database(config.dataset)
 
-        logger.info(f"Selecting JA{config.ja_version} version")
-
         fingerprinting = FingerprintingMethod(config.ja_version)
         db.create_lookup_table(config.ja_version)
-
-        logger.info("Identifying using fingerprinting method...")
 
         fingerprinting.identify(db)
         fingerprinting.display_statistics()
 
         context = Apriori()
-
         context.train(db)
         context.identify(db)
         context.display_statistics()
