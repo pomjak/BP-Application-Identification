@@ -5,7 +5,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 08/03/2025
+Updated: 17/03/2025
 """
 
 import constants as col_names
@@ -23,6 +23,8 @@ class Database:
         self.train_df = {}
         self.test_df = {}
         self.ja_version = None
+        self.context_results = {}
+        self.fingerprinting_results = {}
 
         self.handle_file(dataset)
         self.filter_out_dataset()

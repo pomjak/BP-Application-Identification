@@ -230,7 +230,7 @@ class Apriori(PatternMatchingMethod):
             else 0
         )
 
-    # 0.84.27
+    # 0.8427
     def _tversky_index(self, set1, set2, alpha=0.5, beta=0.5):
         intersection = len(set1.intersection(set2))
         only_in_set1 = len(set1 - set2)
@@ -317,6 +317,7 @@ class Apriori(PatternMatchingMethod):
             # Retrieve test data and group it by app.
             test_ds = db.get_test_df()
             groups = test_ds.groupby(col_names.FILE)
+            results = {}
 
             for _, group in groups:
                 # Find frequent patterns for each group (one app).
@@ -332,6 +333,11 @@ class Apriori(PatternMatchingMethod):
                 self._update_statistics(
                     real_app, top_similarities, db.frequent_patterns
                 )
+                for index, row in group.iterrows():
+                    if index not in results:
+                        results[index] = []
+                    for sim in top_similarities:
+                        results[index].append(sim[1])
 
             # Retrieve number of unique patterns sets in the database.
             self.uniq_count = self._get_number_of_unique_patterns_sets(
@@ -339,6 +345,7 @@ class Apriori(PatternMatchingMethod):
             )
             # Count how often each set is used and its corresponding guess position.
             self._count_usage(db)
+            db.context_results = results
 
     def _count_usage(self, db):
         for app, launches in db.frequent_patterns.items():

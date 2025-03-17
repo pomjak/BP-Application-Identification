@@ -78,7 +78,7 @@ class FingerprintingMethod:
 
     def identify(self, db: Database, context=False):
         # iterate over test dataset and check if app name is in set of candidates
-        for _, row in db.test_df.iterrows():
+        for index, row in db.test_df.iterrows():
             # extract JA hash and app name from one row of ds
             ja = row[self.JA_key]
             jas = row[self.JAS_key]
@@ -106,3 +106,7 @@ class FingerprintingMethod:
             # check if candidates match real app name and update statistics accordingly
             self._resolve_and_update(appname, ja_candidates)
             self._resolve_and_update_combination(appname, candidates)
+            db.fingerprinting_results[index] = {
+                "ja_candidates": frozenset(ja_candidates),
+                "combined_candidates": frozenset(candidates),
+            }
