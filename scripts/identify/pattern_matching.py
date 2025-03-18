@@ -91,58 +91,54 @@ class PatternMatchingMethod:
 
 class Apriori(PatternMatchingMethod):
     def train(self, db: Database):
+        """
+        Train the Apriori algorithm on dataset grouped by app for multiple launches,
+        so that the frequent patterns are found over more launches.
+        """
         with Logger() as logger:
             logger.info("Training Apriori algorithm ...")
+            # Retrieve training data.
             data = db.get_train_df()
-            groups = data.groupby(col_names.FILE)
+            # Group tls entries by app name
+            tls_entries_of_apps = data.groupby(col_names.APP_NAME)
 
-            for _, group in groups:
-                self._train_group(group, db)
+            # Train for each app with multiple launches and look for frequent patterns over more launches
+            for _, multiple_launches_of_one_app in tls_entries_of_apps:
+                self._train_group(multiple_launches_of_one_app, db)
 
-    def _log_patterns(self, db):
+    def log_patterns(self, db):
         with Logger() as logger:
             logger.debug("Frequent patterns found: \n")
             for app in db.frequent_patterns:
                 logger.debug(f"app: {app}")
-                for file in db.frequent_patterns[app]:
-                    logger.debug(f"filename: {file}")
-                    logger.debug(f"patterns: {db.frequent_patterns[app][file]}\n")
+                logger.debug(f"patterns: {db.frequent_patterns[app]}\n")
 
     def _init_db_for_app(self, app, db):
         if app in db.frequent_patterns:
             return
         else:
-            db.frequent_patterns[app] = {}
+            db.frequent_patterns[app] = pd.DataFrame()
             with Logger() as logger:
                 logger.debug(f"Creating new entry for {app}")
 
-    def _add_patterns_to_db(self, app, launch, patterns, db):
+    def _add_patterns_to_db(self, app, patterns, db):
+        """
+        Add only UNIQUE frequent patterns to DB.
+        """
+        db.frequent_patterns[app] = pd.DataFrame(patterns)
         with Logger() as logger:
-            for existing_launch in db.frequent_patterns[app]:
-                existing_df = db.frequent_patterns[app][existing_launch]
-
-                if existing_df.equals(pd.DataFrame(patterns)):  # Found a duplicate
-                    logger.debug(f"Found duplicate for {app}")
-                    break  # Stop checking further.
-
-            else:
-                # If no duplicate was found, add the new pattern.
-                db.frequent_patterns[app][launch] = pd.DataFrame(patterns)
-
-                logger.debug(f"Found {len(patterns)} frequent item sets for {app} \n")
+            logger.debug(f"Found {len(patterns)} frequent item sets for {app} \n")
 
     def _train_group(self, group, db):
         with Logger() as logger:
             app_name = group[col_names.APP_NAME].iloc[0]
-            launch = group[col_names.FILE].iloc[0]
             logger.debug(f"Training for {app_name}, with length of {len(group)}")
 
             frequent_item_sets = self._execute_apriori(group)
 
             self._init_db_for_app(app_name, db)
 
-            # If a duplicate is found, log it and stop checking.
-            self._add_patterns_to_db(app_name, launch, frequent_item_sets, db)
+            self._add_patterns_to_db(app_name, frequent_item_sets, db)
 
     def _preprocess(self, data):
         data = data.drop(
@@ -175,167 +171,25 @@ class Apriori(PatternMatchingMethod):
         )
         return freq_items_set
 
-    # 0.8427
     def _jaccard_similarity(self, set1, set2):
         intersection = len(set1.intersection(set2))
         union = len(set1.union(set2))
         return intersection / union if union != 0 else 0
-
-    def fast_weighted_jaccard(df1, df2):
-        df1_dict = dict(zip(df1["itemsets"].apply(frozenset), df1["support"]))
-        df2_dict = dict(zip(df2["itemsets"].apply(frozenset), df2["support"]))
-
-        # Compute intersection & union first to reduce dictionary lookups
-        intersection_keys = df1_dict.keys() & df2_dict.keys()
-        union_keys = df1_dict.keys() | df2_dict.keys()
-
-        min_support_sum = sum(min(df1_dict[k], df2_dict[k]) for k in intersection_keys)
-        max_support_sum = sum(
-            max(df1_dict.get(k, 0), df2_dict.get(k, 0)) for k in union_keys
-        )
-
-        return min_support_sum / max_support_sum if max_support_sum else 0
-
-    # 0.8315
-    def _cosine_similarity(self, set1, set2):
-        # Handle empty sets
-        if not set1 or not set2:
-            return 0.0
-
-        vectorizer = CountVectorizer(
-            tokenizer=lambda x: x, lowercase=False, token_pattern=None
-        )
-        try:
-            matrix = vectorizer.fit_transform([list(set1), list(set2)])
-            return cosine_similarity(matrix)[0, 1]
-        except ValueError:
-            return 0.0
-
-    # 0.8427
-    def _dice_coefficient(self, set1, set2):
-        intersection = len(set1.intersection(set2))
-        return (
-            (2 * intersection) / (len(set1) + len(set2))
-            if (len(set1) + len(set2)) != 0
-            else 0
-        )
-
-    # 0.7528
-    def _overlap_coefficient(self, set1, set2):
-        intersection = len(set1.intersection(set2))
-        return (
-            intersection / min(len(set1), len(set2))
-            if min(len(set1), len(set2)) != 0
-            else 0
-        )
-
-    # 0.8427
-    def _tversky_index(self, set1, set2, alpha=0.5, beta=0.5):
-        intersection = len(set1.intersection(set2))
-        only_in_set1 = len(set1 - set2)
-        only_in_set2 = len(set2 - set1)
-        return (
-            intersection / (intersection + alpha * only_in_set1 + beta * only_in_set2)
-            if (intersection + alpha * only_in_set1 + beta * only_in_set2) != 0
-            else 0
-        )
-
-    def _calculate_similarity(self, found_items_sets, db):
-        similarities = {}
-
-        # Compute threshold using mode, handle empty mode case
-        mode_values = found_items_sets["support"].mode()
-        threshold = mode_values[0] if not mode_values.empty else 0.0
-
-        # Split DataFrame into low and high support sets
-        found_low_support = found_items_sets[found_items_sets["support"] < threshold]
-        found_high_support = found_items_sets[found_items_sets["support"] >= threshold]
-
-        # Convert itemsets to frozenset for fast Jaccard computation
-        found_low_support_set = frozenset(found_low_support["itemsets"])
-        found_high_support_set = frozenset(found_high_support["itemsets"])
-
-        # Precompute total support and weight fractions
-        total_support = found_items_sets["support"].sum()
-        high_support_weight = found_high_support["support"].sum() / total_support
-        low_support_weight = found_low_support["support"].sum() / total_support
-        cross_support_weight = (high_support_weight + low_support_weight) / 2
-
-        for app, launches in db.frequent_patterns.items():
-            for launch, train_items_sets in launches.items():
-                # Compute threshold for training set
-                mode_values = train_items_sets["support"].mode()
-                threshold = mode_values[0] if not mode_values.empty else 0.0
-
-                # Split training set into low and high support
-                train_low_support = train_items_sets[
-                    train_items_sets["support"] < threshold
-                ]
-                train_high_support = train_items_sets[
-                    train_items_sets["support"] >= threshold
-                ]
-
-                # Convert to frozensets
-                train_low_support_set = frozenset(train_low_support["itemsets"])
-                train_high_support_set = frozenset(train_high_support["itemsets"])
-
-                # Compute Jaccard similarities
-                low_support_sim = self._jaccard_similarity(
-                    found_low_support_set, train_low_support_set
-                )
-                high_support_sim = self._jaccard_similarity(
-                    found_high_support_set, train_high_support_set
-                )
-                cross_support_sim = self._jaccard_similarity(
-                    found_low_support_set, train_high_support_set
-                )
-                cross_support_sim2 = self._jaccard_similarity(
-                    found_high_support_set, train_low_support_set
-                )
-
-                # Compute final weighted similarity score
-                similarity = (
-                    high_support_sim * high_support_weight
-                    + low_support_sim * low_support_weight
-                    + cross_support_sim * cross_support_weight
-                    + cross_support_sim2 * cross_support_weight
-                )
-
-                if app not in similarities:
-                    similarities[app] = (similarity, app, launch)
-                elif similarity > similarities[app][0]:
-                    old_sim = similarities[app][0]
-                    similarities[app] = ((similarity + old_sim) / 2, app, launch)
-        # Return top 3 highest similarities
-        return sorted(similarities.values(), key=lambda x: x[0], reverse=True)[:3]
 
     def identify(self, db: Database):
         with Logger() as logger:
             logger.info("Identifying using Apriori algorithm ...")
             # Retrieve test data and group it by app.
             test_ds = db.get_test_df()
-            groups = test_ds.groupby(col_names.FILE)
-            results = {}
+            launches = test_ds.groupby(col_names.FILE)
 
-            for _, group in groups:
-                # Find frequent patterns for each group (one app).
-                found_items_sets = self._execute_apriori(group)
-                # Retrieve top 3 most similar apps.
-                top_similarities = self._calculate_similarity(found_items_sets, db)
-
-                real_app = group[col_names.APP_NAME].iloc[0]
-                logger.info(
-                    f" real app: {real_app}, top 3 similarities: {[(round(sim, 2), app) for sim, app, _ in top_similarities]}"
-                )
+            for _, launch in launches:
+                real_app = launch[col_names.APP_NAME].iloc[0]
+                # FIXME
+                # identify HERE
                 # Update statistics based on the results.
-                self._update_statistics(
-                    real_app, top_similarities, db.frequent_patterns
-                )
-                for index, row in group.iterrows():
-                    if index not in results:
-                        results[index] = set()
-                    for sim in top_similarities:
-                        results[index].add(sim[1])
+                top_guesses = []
+                self._update_statistics(real_app, top_guesses, db.frequent_patterns)
 
             # Retrieve number of unique patterns sets in the database.
             self.uniq_count = self._get_number_of_unique_patterns_sets(
@@ -343,22 +197,20 @@ class Apriori(PatternMatchingMethod):
             )
             # Count how often each set is used and its corresponding guess position.
             self._count_usage(db)
-            db.context_results = results
 
     def _count_usage(self, db):
-        for app, launches in db.frequent_patterns.items():
-            for launch in launches:
-                # Iterate over top 3 guesses and update stats.
-                for pos in range(1, 4):
-                    match self._get_usage_of_set(app, launch, pos):
-                        case 0:
-                            self.used_never[pos - 1] += 1
-                        case 1:
-                            self.used_once_count[pos - 1] += 1
-                        case 2:
-                            self.used_twice_count[pos - 1] += 1
-                        case default:  # noqa: F841
-                            self.used_more_times[pos - 1] += 1
+        for app in db.frequent_patterns:
+            # Iterate over top 3 guesses and update stats.
+            for pos in range(1, 4):
+                match self._get_usage_of_set(app, pos):
+                    case 0:
+                        self.used_never[pos - 1] += 1
+                    case 1:
+                        self.used_once_count[pos - 1] += 1
+                    case 2:
+                        self.used_twice_count[pos - 1] += 1
+                    case default:  # noqa: F841
+                        self.used_more_times[pos - 1] += 1
 
     def _update_statistics(self, real_app, top_similarities, set_of_patterns):
         if top_similarities:
@@ -401,21 +253,18 @@ class Apriori(PatternMatchingMethod):
         with Logger() as logger:
             logger.warn("No similar apps found")
 
-    def _mark_set_as_used(self, app, file, pos=1):
+    def _mark_set_as_used(self, app, pos=1):
         """
         Mark set of patterns in training db as used for identifying the app correctly.
         """
 
         if app not in self.usage_of_patterns:
-            self.usage_of_patterns[app] = {}
-        if file not in self.usage_of_patterns[app]:
-            self.usage_of_patterns[app][file] = [0, 0, 0]
+            self.usage_of_patterns[app] = [0, 0, 0]
+        self.usage_of_patterns[app][pos - 1] += 1
 
-        self.usage_of_patterns[app][file][pos - 1] += 1
-
-    def _get_usage_of_set(self, app, file, pos=1):
-        if app in self.usage_of_patterns and file in self.usage_of_patterns[app]:
-            return self.usage_of_patterns[app][file][pos - 1]
+    def _get_usage_of_set(self, app, pos=1):
+        if app in self.usage_of_patterns:
+            return self.usage_of_patterns[app][pos - 1]
         else:
             return 0
 
@@ -438,10 +287,8 @@ class Apriori(PatternMatchingMethod):
             logger.debug("Usage of patterns:")
             count = 0
             for app in self.usage_of_patterns:
+                count += 1
                 logger.debug(f"App: {app}")
-                for file in self.usage_of_patterns[app]:
-                    count += 1
-                    logger.debug(f"File: {file}")
-                    logger.debug(f"Usage: {self.usage_of_patterns[app][file]}")
-                    logger.debug(count)
-                    logger.debug("\n")
+                logger.debug(f"Usage: {self.usage_of_patterns[app]}")
+                logger.debug(count)
+                logger.debug("\n")
