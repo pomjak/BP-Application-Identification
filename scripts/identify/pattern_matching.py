@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 18/03/2025
+Updated: 20/03/2025
 """
 
 from prefixspan import prefixspan
@@ -126,8 +126,25 @@ class Apriori(PatternMatchingMethod):
         Add only UNIQUE frequent patterns to DB.
         """
         db.frequent_patterns[app] = pd.DataFrame(patterns)
+        db.frequent_patterns[app] = self._normalize_support(db.frequent_patterns[app])
         with Logger() as logger:
             logger.debug(f"Found {len(patterns)} frequent item sets for {app} \n")
+
+    def _normalize_support(self, patterns_df):
+        support_values = patterns_df["support"].values
+        percentiles = np.percentile(
+            support_values, np.arange(0, 101, 1)
+        )  # Percentiles from 0 to 100
+
+        # Map each support value to its percentile rank
+        normalized_support = (
+            np.searchsorted(percentiles, support_values, side="right") / 100.0
+        )
+
+        # Replace the original support values with the normalized values
+        patterns_df["normalized_support"] = normalized_support
+
+        return patterns_df
 
     def _train_group(self, group, db):
         with Logger() as logger:
@@ -135,7 +152,6 @@ class Apriori(PatternMatchingMethod):
             logger.debug(f"Training for {app_name}, with length of {len(group)}")
 
             frequent_item_sets = self._execute_apriori(group)
-
             self._init_db_for_app(app_name, db)
 
             self._add_patterns_to_db(app_name, frequent_item_sets, db)
@@ -166,9 +182,7 @@ class Apriori(PatternMatchingMethod):
     def _execute_apriori(self, group):
         processed_group = self._preprocess(group)
 
-        freq_items_set = apriori(
-            processed_group, min_support=0.01, use_colnames=True, max_len=3
-        )
+        freq_items_set = apriori(processed_group, min_support=0.01, use_colnames=True)
         return freq_items_set
 
     def _jaccard_similarity(self, set1, set2):
@@ -176,19 +190,23 @@ class Apriori(PatternMatchingMethod):
         union = len(set1.union(set2))
         return intersection / union if union != 0 else 0
 
+    def _overlap_similarity(self, set1, set2):
+        intersection = len(set1.intersection(set2))
+        return intersection / len(set1) if len(set1) != 0 else 0
+
     def identify(self, db: Database):
         with Logger() as logger:
             logger.info("Identifying using Apriori algorithm ...")
             # Retrieve test data and group it by app.
             test_ds = db.get_test_df()
-            launches = test_ds.groupby(col_names.FILE)
+            test_ds_launches = test_ds.groupby(col_names.FILE)
 
-            for _, launch in launches:
+            for _, launch in test_ds_launches:
                 real_app = launch[col_names.APP_NAME].iloc[0]
-                # FIXME
-                # identify HERE
+                # Find similarity of tle entries in db of frequent patterns.
+                top_guesses = self.find_similarity(db.frequent_patterns, launch)
+                print(f"{real_app}:{top_guesses}")
                 # Update statistics based on the results.
-                top_guesses = []
                 self._update_statistics(real_app, top_guesses, db.frequent_patterns)
 
             # Retrieve number of unique patterns sets in the database.
@@ -197,6 +215,23 @@ class Apriori(PatternMatchingMethod):
             )
             # Count how often each set is used and its corresponding guess position.
             self._count_usage(db)
+
+    def find_similarity(self, frequent_patterns, tls_group):
+        top_scores = {}
+        stripped_tls = tls_group.drop(columns=[col_names.FILE, col_names.APP_NAME])
+        tls_set = set(stripped_tls.values.flatten())
+
+        for app, patterns in frequent_patterns.items():
+            score = sum(
+                self._jaccard_similarity(tls_set, set(row["itemsets"]))
+                * row["normalized_support"]
+                for _, row in patterns.iterrows()
+            )
+            if score > 0:
+                top_scores[app] = score
+
+        # Return top 3 scores with app name and scores
+        return heapq.nlargest(3, top_scores.items(), key=lambda x: x[1])
 
     def _count_usage(self, db):
         for app in db.frequent_patterns:
@@ -220,32 +255,27 @@ class Apriori(PatternMatchingMethod):
 
     def _check_top_guesses(self, real_app, top_similarities, set_of_patterns):
         # If real app is 1st guess, update stats. Else check 2nd and 3rd guess.
-        if real_app == top_similarities[0][1]:
-            self._update_correct_guess(1, set_of_patterns, top_similarities[0])
-
-        elif len(top_similarities) > 1 and real_app == top_similarities[1][1]:
-            self._update_correct_guess(2, set_of_patterns, top_similarities[1])
-
-        elif len(top_similarities) > 2 and real_app == top_similarities[2][1]:
-            self._update_correct_guess(3, set_of_patterns, top_similarities[2])
-
+        for rank, (app, _) in enumerate(top_similarities[:3], start=1):
+            if real_app == app:
+                self._update_correct_guess(rank, app)
+                break
         else:
             self.incorrect += 1
 
-    def _update_correct_guess(self, guess_rank, set_of_patterns, similarity):
+    def _update_correct_guess(self, guess_rank, app):
         # Update stats based on which guess was correct.
         match guess_rank:
             case 1:
                 self.first_guess += 1
-                self._mark_set_as_used(similarity[1], similarity[2], 1)
+                self._mark_set_as_used(app, 1)
 
             case 2:
                 self.second_guess += 1
-                self._mark_set_as_used(similarity[1], similarity[2], 2)
+                self._mark_set_as_used(app, 2)
 
             case 3:
                 self.third_guess += 1
-                self._mark_set_as_used(similarity[1], similarity[2], 3)
+                self._mark_set_as_used(app, 3)
 
         self.correct += 1
 

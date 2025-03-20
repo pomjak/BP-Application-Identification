@@ -5,7 +5,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 17/03/2025
+Updated: 20/03/2025
 """
 
 import constants as col_names
@@ -67,7 +67,7 @@ class Database:
                     # col_names.CLIENT_SUPPORTED_GROUPS,
                     # col_names.CLIENT_SUPPORTED_VERSIONS,
                     # col_names.EC_FMT,
-                    # col_names.ALPN,
+                    col_names.ALPN,
                     # col_names.SIGNATURE_ALGORITHMS,
                     # col_names.SERVER_CIPHER_SUITE,
                     # col_names.SERVER_EXTENSIONS,

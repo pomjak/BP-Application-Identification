@@ -4,7 +4,7 @@ Description: Main file for identification of applications using JA3/4 fingerprin
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 18/03/2025
+Updated: 20/03/2025
 """
 
 from logger import Logger
@@ -34,9 +34,9 @@ def main():
         context.identify(db)
         context.display_statistics()
 
-        result_merger = ResultMerger(config.ja_version)
-        result_merger.merge(db.fingerprinting_results, db.context_results, db.test_df)
-        result_merger.display_statistics()
+        # result_merger = ResultMerger(config.ja_version)
+        # result_merger.merge(db.fingerprinting_results, db.context_results, db.test_df)
+        # result_merger.display_statistics()
 
         logger.info("[FINISH]")
 
