@@ -67,7 +67,7 @@ class Database:
                     # col_names.CLIENT_SUPPORTED_GROUPS,
                     # col_names.CLIENT_SUPPORTED_VERSIONS,
                     # col_names.EC_FMT,
-                    col_names.ALPN,
+                    # col_names.ALPN,
                     # col_names.SIGNATURE_ALGORITHMS,
                     # col_names.SERVER_CIPHER_SUITE,
                     # col_names.SERVER_EXTENSIONS,

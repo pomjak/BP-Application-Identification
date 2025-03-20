@@ -194,6 +194,14 @@ class Apriori(PatternMatchingMethod):
         intersection = len(set1.intersection(set2))
         return intersection / len(set1) if len(set1) != 0 else 0
 
+    def _dice_similarity(self, set1, set2):
+        intersection = len(set1.intersection(set2))
+        return (
+            2 * intersection / (len(set1) + len(set2))
+            if len(set1) + len(set2) != 0
+            else 0
+        )
+
     def identify(self, db: Database):
         with Logger() as logger:
             logger.info("Identifying using Apriori algorithm ...")
@@ -205,9 +213,9 @@ class Apriori(PatternMatchingMethod):
                 real_app = launch[col_names.APP_NAME].iloc[0]
                 # Find similarity of tle entries in db of frequent patterns.
                 top_guesses = self.find_similarity(db.frequent_patterns, launch)
-                print(f"{real_app}:{top_guesses}")
+                # print(f"{real_app}:{top_guesses}")
                 # Update statistics based on the results.
-                self._update_statistics(real_app, top_guesses, db.frequent_patterns)
+                self._update_statistics(real_app, top_guesses)
 
             # Retrieve number of unique patterns sets in the database.
             self.uniq_count = self._get_number_of_unique_patterns_sets(
@@ -216,19 +224,37 @@ class Apriori(PatternMatchingMethod):
             # Count how often each set is used and its corresponding guess position.
             self._count_usage(db)
 
+    def _min_max_normalization(self, scores):
+        if scores:
+            min_score = min(scores.values())
+            max_score = max(scores.values())
+
+            if max_score > min_score:  # Avoid division by zero
+                normalized_scores = {
+                    app: (score - min_score) / (max_score - min_score)
+                    for app, score in scores.items()
+                }
+            else:
+                normalized_scores = {app: 1 for app in scores}
+        return normalized_scores
+
     def find_similarity(self, frequent_patterns, tls_group):
         top_scores = {}
+        raw_scores = {}
         stripped_tls = tls_group.drop(columns=[col_names.FILE, col_names.APP_NAME])
         tls_set = set(stripped_tls.values.flatten())
 
         for app, patterns in frequent_patterns.items():
             score = sum(
-                self._jaccard_similarity(tls_set, set(row["itemsets"]))
+                self._dice_similarity(tls_set, set(row["itemsets"]))
                 * row["normalized_support"]
                 for _, row in patterns.iterrows()
             )
             if score > 0:
-                top_scores[app] = score
+                raw_scores[app] = score
+
+        # # Normalize scores
+        # top_scores = self._min_max_normalization(raw_scores)
 
         # Return top 3 scores with app name and scores
         return heapq.nlargest(3, top_scores.items(), key=lambda x: x[1])
@@ -247,13 +273,20 @@ class Apriori(PatternMatchingMethod):
                     case default:  # noqa: F841
                         self.used_more_times[pos - 1] += 1
 
-    def _update_statistics(self, real_app, top_similarities, set_of_patterns):
+    def _update_statistics(self, real_app, top_similarities):
         if top_similarities:
-            self._check_top_guesses(real_app, top_similarities, set_of_patterns)
+            self._check_top_guesses(
+                real_app,
+                top_similarities,
+            )
         else:
             self._log_no_similar_apps_found()
 
-    def _check_top_guesses(self, real_app, top_similarities, set_of_patterns):
+    def _check_top_guesses(
+        self,
+        real_app,
+        top_similarities,
+    ):
         # If real app is 1st guess, update stats. Else check 2nd and 3rd guess.
         for rank, (app, _) in enumerate(top_similarities[:3], start=1):
             if real_app == app:
