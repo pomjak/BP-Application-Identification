@@ -4,20 +4,20 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 20/03/2025
+Updated: 22/03/2025
 """
 
-from prefixspan import prefixspan
 from database import Database
 import pandas as pd
 from mlxtend.frequent_patterns import apriori
-from mlxtend.frequent_patterns import association_rules
 from mlxtend.preprocessing import TransactionEncoder
 from logger import Logger
 import heapq
-import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import CountVectorizer
+from collections import Counter
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
+import heapq
 
 # from spade import spade as sp
 
@@ -202,6 +202,15 @@ class Apriori(PatternMatchingMethod):
             else 0
         )
 
+    def _cosine_similarity(self, set1, set2):
+        # Convert sets to bag-of-words representation
+        all_items = list(set1.union(set2))
+        vec1 = np.array([1 if item in set1 else 0 for item in all_items])
+        vec2 = np.array([1 if item in set2 else 0 for item in all_items])
+
+        # Compute Cosine Similarity
+        return cosine_similarity([vec1], [vec2])[0][0]
+
     def identify(self, db: Database):
         with Logger() as logger:
             logger.info("Identifying using Apriori algorithm ...")
@@ -213,7 +222,7 @@ class Apriori(PatternMatchingMethod):
                 real_app = launch[col_names.APP_NAME].iloc[0]
                 # Find similarity of tle entries in db of frequent patterns.
                 top_guesses = self.find_similarity(db.frequent_patterns, launch)
-                # print(f"{real_app}:{top_guesses}")
+                print(f"{real_app}:{top_guesses}")
                 # Update statistics based on the results.
                 self._update_statistics(real_app, top_guesses)
 
@@ -224,39 +233,42 @@ class Apriori(PatternMatchingMethod):
             # Count how often each set is used and its corresponding guess position.
             self._count_usage(db)
 
-    def _min_max_normalization(self, scores):
-        if scores:
-            min_score = min(scores.values())
-            max_score = max(scores.values())
-
-            if max_score > min_score:  # Avoid division by zero
-                normalized_scores = {
-                    app: (score - min_score) / (max_score - min_score)
-                    for app, score in scores.items()
-                }
-            else:
-                normalized_scores = {app: 1 for app in scores}
-        return normalized_scores
-
     def find_similarity(self, frequent_patterns, tls_group):
         top_scores = {}
-        raw_scores = {}
         stripped_tls = tls_group.drop(columns=[col_names.FILE, col_names.APP_NAME])
-        tls_set = set(stripped_tls.values.flatten())
 
         for app, patterns in frequent_patterns.items():
-            score = sum(
-                self._dice_similarity(tls_set, set(row["itemsets"]))
-                * row["normalized_support"]
-                for _, row in patterns.iterrows()
-            )
-            if score > 0:
-                raw_scores[app] = score
+            # Reset total score for each app
+            total_score = 0
 
-        # # Normalize scores
-        # top_scores = self._min_max_normalization(raw_scores)
+            for _, row in patterns.iterrows():
+                pattern_set = set(row["itemsets"])
+                # Track score per pattern
+                pattern_score = 0
 
-        # Return top 3 scores with app name and scores
+                for _, tls_row in stripped_tls.iterrows():
+                    tls_set = set(tls_row.values.flatten())
+                    similarity = self._cosine_similarity(tls_set, pattern_set)
+                    # Accumulate similarity for this pattern
+                    pattern_score += similarity * row["normalized_support"]
+
+                # Add pattern's total score to app's total score
+                total_score += pattern_score
+
+            # Store total score for this app
+            if total_score > 0:
+                top_scores[app] = total_score
+        # Normalize scores using Min-Max Scaling
+        scores_array = np.array(list(top_scores.values())).reshape(-1, 1)
+        if len(scores_array) > 1:  # Avoid division by zero in single app case
+            scaler = MinMaxScaler()
+            normalized_scores = scaler.fit_transform(scores_array).flatten()
+            top_scores = {
+                app: float(score)
+                for app, score in zip(top_scores.keys(), normalized_scores)
+            }
+
+        # Return top 3 apps with highest scores
         return heapq.nlargest(3, top_scores.items(), key=lambda x: x[1])
 
     def _count_usage(self, db):
