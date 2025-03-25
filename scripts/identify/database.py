@@ -5,7 +5,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 17/03/2025
+Updated: 24/03/2025
 """
 
 import constants as col_names
@@ -100,6 +100,7 @@ class Database:
                     # train_list.append(group)
 
             self.train_df = pd.concat(train_list)
+            self.train_df.drop_duplicates(inplace=True)
             self.test_df = pd.concat(test_list)
 
             logger.info(f"training dataset: {len(self.train_df)}")
