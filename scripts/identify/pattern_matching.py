@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 24/03/2025
+Updated: 25/03/2025
 """
 
 from database import Database
@@ -16,7 +16,6 @@ import heapq
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import heapq
-from prefixspan import PrefixSpan
 
 import constants as col_names
 
@@ -209,29 +208,15 @@ class Apriori(PatternMatchingMethod):
             # Retrieve test data and group it by app.
             test_ds = db.get_test_df()
             test_ds_launches = test_ds.groupby(col_names.FILE)
-            aim_icq_voip_fuckery = 0
 
             for _, launch in test_ds_launches:
                 real_app = launch[col_names.APP_NAME].iloc[0]
                 # Find similarity of tle entries in db of frequent patterns.
                 top_guesses = self.find_similarity(db.frequent_patterns, launch)
-                if (
-                    len(top_guesses) > 2
-                    and top_guesses[0][0] == "aim"
-                    and top_guesses[1][0] == "icq"
-                    and top_guesses[2][0] == "voipbuster"
-                ):
-                    aim_icq_voip_fuckery += 1
-                    top_guesses = self.find_similarity(
-                        db.frequent_patterns, launch, ignoreFirst3=True
-                    )
-                    self._debug_identify_print(real_app, top_guesses, warn=True)
-                else:
-                    self._debug_identify_print(real_app, top_guesses)
+                self._debug_identify_print(real_app, top_guesses)
                 # Update statistics based on the results.
                 self._update_statistics(real_app, top_guesses)
 
-            print(f"mf: {aim_icq_voip_fuckery}")
             # Retrieve number of unique patterns sets in the database.
             self.uniq_count = self._get_number_of_unique_patterns_sets(
                 db.frequent_patterns
@@ -270,7 +255,7 @@ class Apriori(PatternMatchingMethod):
 
         return {k: (v - min_score) / (max_score - min_score) for k, v in scores.items()}
 
-    def find_similarity(self, frequent_patterns, tls_group, ignoreFirst3=False):
+    def find_similarity(self, frequent_patterns, tls_group):
         top_scores = {}
         stripped_tls = tls_group.drop(columns=[col_names.FILE, col_names.APP_NAME])
         tls_set = frozenset(stripped_tls.values.flatten())
@@ -312,7 +297,7 @@ class Apriori(PatternMatchingMethod):
         norm_scores = self._minmax_normalize(top_scores)
 
         # Return top 3 apps with highest scores
-        return heapq.nlargest(10, norm_scores.items(), key=lambda x: x[1])
+        return heapq.nlargest(3, norm_scores.items(), key=lambda x: x[1])
 
     def _count_usage(self, db):
         for app in db.frequent_patterns:
