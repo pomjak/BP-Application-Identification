@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 25/03/2025
+Updated: 29/03/2025
 """
 
 from database import Database
@@ -35,6 +35,111 @@ class PatternMatchingMethod:
         self.used_twice_count = [0, 0, 0]
         self.used_more_times = [0, 0, 0]
         self.used_never = [0, 0, 0]
+        self.uniq_count = 0
+        self.len_of_candidates = 0
+
+    def _update_statistics(self, real_app, top_similarities):
+        if top_similarities:
+            self._check_top_guesses(
+                real_app,
+                top_similarities,
+            )
+        else:
+            self._log_no_similar_apps_found()
+
+    def _check_top_guesses(self, real_app, top_similarities):
+        # If real app is 1st guess, update stats. Else check 2nd and 3rd guess.
+        for rank, (app, _) in enumerate(top_similarities[:3], start=1):
+            if real_app == app:
+                self._update_correct_guess(rank, app)
+                break
+        else:
+            self.incorrect += 1
+        self.len_of_candidates += len(top_similarities)
+
+    def _update_correct_guess(self, guess_rank, app):
+        # Update stats based on which guess was correct.
+        match guess_rank:
+            case 1:
+                self.first_guess += 1
+                self._mark_set_as_used(app, 1)
+
+            case 2:
+                self.second_guess += 1
+                self._mark_set_as_used(app, 2)
+
+            case 3:
+                self.third_guess += 1
+                self._mark_set_as_used(app, 3)
+
+        self.correct += 1
+
+    def _count_usage(self, db):
+        for app in db.frequent_patterns:
+            # Iterate over top 3 guesses and update stats.
+            for pos in range(1, 4):
+                match self._get_usage_of_set(app, pos):
+                    case 0:
+                        self.used_never[pos - 1] += 1
+                    case 1:
+                        self.used_once_count[pos - 1] += 1
+                    case 2:
+                        self.used_twice_count[pos - 1] += 1
+                    case default:  # noqa: F841
+                        self.used_more_times[pos - 1] += 1
+
+    def _update_statistics(self, real_app, top_similarities):
+        if top_similarities:
+            self._check_top_guesses(
+                real_app,
+                top_similarities,
+            )
+        else:
+            self._log_no_similar_apps_found()
+
+    def _log_no_similar_apps_found(self):
+        with Logger() as logger:
+            logger.warn("No similar apps found")
+
+    def _mark_set_as_used(self, app, pos=1):
+        """
+        Mark set of patterns in training db as used for identifying the app correctly.
+        """
+
+        if app not in self.usage_of_patterns:
+            self.usage_of_patterns[app] = [0, 0, 0]
+        self.usage_of_patterns[app][pos - 1] += 1
+
+    def _get_usage_of_set(self, app, pos=1):
+        if app in self.usage_of_patterns:
+            return self.usage_of_patterns[app][pos - 1]
+        else:
+            return 0
+
+    def _get_number_of_unique_patterns_sets(self, trained_patterns, app=None):
+        """
+        Returns the number of unique patterns sets in the database if app is None,
+        otherwise returns the number of unique patterns sets for the given app.
+        """
+        uniq = 0
+        if app:
+            return len(trained_patterns[app])
+        else:
+            for app in trained_patterns:
+                # Db has already only distinct sets of patterns for each app.
+                uniq += len(trained_patterns[app])
+        return uniq
+
+    def _log_usage_of_every_launch(self):
+        with Logger() as logger:
+            logger.debug("Usage of patterns:")
+            count = 0
+            for app in self.usage_of_patterns:
+                count += 1
+                logger.debug(f"App: {app}")
+                logger.debug(f"Usage: {self.usage_of_patterns[app]}")
+                logger.debug(count)
+                logger.debug("\n")
 
     def display_statistics(self):
         print("________________________________________________________")
@@ -59,6 +164,7 @@ class PatternMatchingMethod:
         print(f"Accuracy 3rd guess : {round(self.third_guess / (total), 4)}")
         print(f"Accuracy overall: {round(self.correct / (total), 4)}")
         print(f"Error rate: {round(self.incorrect / (total), 4)}")
+        print(f"Average len of candidates: {self.len_of_candidates / total}")
         print()
 
         print(f"Number of unique patterns sets: {self.uniq_count}")
@@ -125,7 +231,7 @@ class Apriori(PatternMatchingMethod):
         """
         patterns = patterns.drop_duplicates(subset="itemsets")  # Remove duplicates
         patterns = patterns.sort_values(by="support", ascending=False)
-        # patterns = patterns.drop(patterns[patterns["support"] < 0.15].index)
+        patterns = patterns.drop(patterns[patterns["support"] < 0.15].index)
         patterns = patterns.reset_index(drop=True)
         db.frequent_patterns[app] = pd.DataFrame(patterns)
         db.frequent_patterns[app] = self._normalize_support(db.frequent_patterns[app])
@@ -172,7 +278,7 @@ class Apriori(PatternMatchingMethod):
 
     def _execute_apriori(self, group):
         processed_group = self._preprocess(group)
-        freq_items_set = apriori(processed_group, min_support=0.01, use_colnames=True)
+        freq_items_set = apriori(processed_group, min_support=0.1, use_colnames=True)
 
         return freq_items_set
 
@@ -216,13 +322,6 @@ class Apriori(PatternMatchingMethod):
                 self._debug_identify_print(real_app, top_guesses)
                 # Update statistics based on the results.
                 self._update_statistics(real_app, top_guesses)
-
-            # Retrieve number of unique patterns sets in the database.
-            self.uniq_count = self._get_number_of_unique_patterns_sets(
-                db.frequent_patterns
-            )
-            # Count how often each set is used and its corresponding guess position.
-            self._count_usage(db)
 
     def _debug_identify_print(self, real_app, top_guesses, warn=False):
         if col_names.DEBUG_ENABLED:
@@ -298,100 +397,3 @@ class Apriori(PatternMatchingMethod):
 
         # Return top 3 apps with highest scores
         return heapq.nlargest(3, norm_scores.items(), key=lambda x: x[1])
-
-    def _count_usage(self, db):
-        for app in db.frequent_patterns:
-            # Iterate over top 3 guesses and update stats.
-            for pos in range(1, 4):
-                match self._get_usage_of_set(app, pos):
-                    case 0:
-                        self.used_never[pos - 1] += 1
-                    case 1:
-                        self.used_once_count[pos - 1] += 1
-                    case 2:
-                        self.used_twice_count[pos - 1] += 1
-                    case default:  # noqa: F841
-                        self.used_more_times[pos - 1] += 1
-
-    def _update_statistics(self, real_app, top_similarities):
-        if top_similarities:
-            self._check_top_guesses(
-                real_app,
-                top_similarities,
-            )
-        else:
-            self._log_no_similar_apps_found()
-
-    def _check_top_guesses(
-        self,
-        real_app,
-        top_similarities,
-    ):
-        # If real app is 1st guess, update stats. Else check 2nd and 3rd guess.
-        for rank, (app, _) in enumerate(top_similarities[:3], start=1):
-            if real_app == app:
-                self._update_correct_guess(rank, app)
-                break
-        else:
-            self.incorrect += 1
-
-    def _update_correct_guess(self, guess_rank, app):
-        # Update stats based on which guess was correct.
-        match guess_rank:
-            case 1:
-                self.first_guess += 1
-                self._mark_set_as_used(app, 1)
-
-            case 2:
-                self.second_guess += 1
-                self._mark_set_as_used(app, 2)
-
-            case 3:
-                self.third_guess += 1
-                self._mark_set_as_used(app, 3)
-
-        self.correct += 1
-
-    def _log_no_similar_apps_found(self):
-        with Logger() as logger:
-            logger.warn("No similar apps found")
-
-    def _mark_set_as_used(self, app, pos=1):
-        """
-        Mark set of patterns in training db as used for identifying the app correctly.
-        """
-
-        if app not in self.usage_of_patterns:
-            self.usage_of_patterns[app] = [0, 0, 0]
-        self.usage_of_patterns[app][pos - 1] += 1
-
-    def _get_usage_of_set(self, app, pos=1):
-        if app in self.usage_of_patterns:
-            return self.usage_of_patterns[app][pos - 1]
-        else:
-            return 0
-
-    def _get_number_of_unique_patterns_sets(self, trained_patterns, app=None):
-        """
-        Returns the number of unique patterns sets in the database if app is None,
-        otherwise returns the number of unique patterns sets for the given app.
-        """
-        uniq = 0
-        if app:
-            return len(trained_patterns[app])
-        else:
-            for app in trained_patterns:
-                # Db has already only distinct sets of patterns for each app.
-                uniq += len(trained_patterns[app])
-        return uniq
-
-    def _log_usage_of_every_launch(self):
-        with Logger() as logger:
-            logger.debug("Usage of patterns:")
-            count = 0
-            for app in self.usage_of_patterns:
-                count += 1
-                logger.debug(f"App: {app}")
-                logger.debug(f"Usage: {self.usage_of_patterns[app]}")
-                logger.debug(count)
-                logger.debug("\n")
