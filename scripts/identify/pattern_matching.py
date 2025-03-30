@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 29/03/2025
+Updated: 30/03/2025
 """
 
 from database import Database
@@ -231,8 +231,11 @@ class Apriori(PatternMatchingMethod):
         """
         patterns = patterns.drop_duplicates(subset="itemsets")  # Remove duplicates
         patterns = patterns.sort_values(by="support", ascending=False)
-        patterns = patterns.drop(patterns[patterns["support"] < 0.15].index)
+
+        median = patterns["support"].median()
+        patterns = patterns.drop(patterns[patterns["support"] < median].index)
         patterns = patterns.reset_index(drop=True)
+
         db.frequent_patterns[app] = pd.DataFrame(patterns)
         db.frequent_patterns[app] = self._normalize_support(db.frequent_patterns[app])
         with Logger() as logger:
@@ -374,7 +377,7 @@ class Apriori(PatternMatchingMethod):
                 overlap = self._overlap_similarity(tls_set, pattern_set)
                 dice = self._dice_similarity(tls_set, pattern_set)
 
-                bonus_score = 1000 if pattern_set.issubset(tls_set) else 1
+                bonus_score = 50 if pattern_set.issubset(tls_set) else 1
 
                 combined_score = jaccard * 0.3 + overlap * 0.5 + dice * 0.2
 

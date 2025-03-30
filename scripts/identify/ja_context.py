@@ -27,16 +27,16 @@ class JA_Context(PatternMatchingMethod):
         # Reset index to ensure proper iteration
         shuffled_test_df = shuffled_test_df.reset_index(drop=True)
         # sliding window over testing dataset
-        window_size = 11
+        window_size = 15
         for i in range(len(test_df) - window_size + 1):
             window = test_df.iloc[i : i + window_size]
             row = window.iloc[0]
             real_app = row[Constants.APP_NAME]
 
-            print(
-                row[Constants.FILE],
-                row.name,
-            )
+            # print(
+            #     row[Constants.FILE],
+            #     row.name,
+            # )
             ja_candidates = self.fingerprinting.get_ja_candidates(row, db)
             ja_combination_candidates = self.fingerprinting.get_ja_comb_candidates(
                 row, db, ja_candidates
@@ -59,7 +59,7 @@ class JA_Context(PatternMatchingMethod):
                 db_for_ja_comb, window
             )
 
-            self._update_statistics(real_app, ja_context_candidates)
+            self._update_statistics(real_app, ja_comb_context_candidates)
         self.uniq_count = self._get_number_of_unique_patterns_sets(db.frequent_patterns)
         # Count how often each set is used and its corresponding guess position.
         self._count_usage(db)
