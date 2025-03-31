@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 30/03/2025
+Updated: 31/03/2025
 """
 
 from database import Database
@@ -21,85 +21,99 @@ import constants as col_names
 
 
 class PatternMatchingMethod:
-    def __init__(self):
+    def __init__(self, min_sup):
+        self.min_support = min_sup
         self.correct = 0
         self.incorrect = 0
-
         self.first_guess = 0
         self.second_guess = 0
         self.third_guess = 0
 
-        self.uniqueness = 0
-        self.usage_of_patterns = {}
-        self.used_once_count = [0, 0, 0]
-        self.used_twice_count = [0, 0, 0]
-        self.used_more_times = [0, 0, 0]
-        self.used_never = [0, 0, 0]
-        self.uniq_count = 0
-        self.len_of_candidates = 0
+        self.comb_correct = 0
+        self.comb_incorrect = 0
+        self.comb_first_guess = 0
+        self.comb_second_guess = 0
+        self.comb_third_guess = 0
 
-    def _update_statistics(self, real_app, top_similarities):
+        self.empty_candidates = 0
+        self.empty_comb_candidates = 0
+
+        # self.uniqueness = 0
+        # self.usage_of_patterns = {}
+        # self.used_once_count = [0, 0, 0]
+        # self.used_twice_count = [0, 0, 0]
+        # self.used_more_times = [0, 0, 0]
+        # self.used_never = [0, 0, 0]
+        # self.uniq_count = 0
+
+        self.len_of_candidates = []
+        self.comb_len_of_candidates = []
+
+        self.number_of_tls = 0
+
+    def _update_statistics(self, real_app, top_similarities, is_comb=False):
         if top_similarities:
-            self._check_top_guesses(
-                real_app,
-                top_similarities,
-            )
+            self._check_top_guesses(real_app, top_similarities, is_comb)
         else:
-            self._log_no_similar_apps_found()
+            if is_comb:
+                self.empty_comb_candidates += 1
+            else:
+                self.empty_candidates += 1
+            self._log_no_similar_apps_found(real_app)
 
-    def _check_top_guesses(self, real_app, top_similarities):
+    def _check_top_guesses(self, real_app, top_similarities, is_comb=False):
         # If real app is 1st guess, update stats. Else check 2nd and 3rd guess.
         for rank, (app, _) in enumerate(top_similarities[:3], start=1):
             if real_app == app:
-                self._update_correct_guess(rank, app)
+                self._update_correct_guess(rank, app, is_comb)
                 break
         else:
             self.incorrect += 1
-        self.len_of_candidates += len(top_similarities)
 
-    def _update_correct_guess(self, guess_rank, app):
-        # Update stats based on which guess was correct.
-        match guess_rank:
-            case 1:
-                self.first_guess += 1
-                self._mark_set_as_used(app, 1)
-
-            case 2:
-                self.second_guess += 1
-                self._mark_set_as_used(app, 2)
-
-            case 3:
-                self.third_guess += 1
-                self._mark_set_as_used(app, 3)
-
-        self.correct += 1
-
-    def _count_usage(self, db):
-        for app in db.frequent_patterns:
-            # Iterate over top 3 guesses and update stats.
-            for pos in range(1, 4):
-                match self._get_usage_of_set(app, pos):
-                    case 0:
-                        self.used_never[pos - 1] += 1
-                    case 1:
-                        self.used_once_count[pos - 1] += 1
-                    case 2:
-                        self.used_twice_count[pos - 1] += 1
-                    case default:  # noqa: F841
-                        self.used_more_times[pos - 1] += 1
-
-    def _update_statistics(self, real_app, top_similarities):
-        if top_similarities:
-            self._check_top_guesses(
-                real_app,
-                top_similarities,
-            )
+        if is_comb:
+            self.comb_len_of_candidates.append(len(top_similarities))
         else:
-            self._log_no_similar_apps_found()
+            self.len_of_candidates.append(len(top_similarities))
 
-    def _log_no_similar_apps_found(self):
+    def _update_correct_guess(self, guess_rank, app, is_comb=False):
+        # Update stats based on which guess was correct.
+        if is_comb:
+            attr_map = {
+                1: "comb_first_guess",
+                2: "comb_second_guess",
+                3: "comb_third_guess",
+            }
+            correct_attr = "comb_correct"
+        else:
+            attr_map = {
+                1: "first_guess",
+                2: "second_guess",
+                3: "third_guess",
+            }
+            correct_attr = "correct"
+
+        if guess_rank in attr_map:
+            setattr(self, attr_map[guess_rank], getattr(self, attr_map[guess_rank]) + 1)
+
+        setattr(self, correct_attr, getattr(self, correct_attr) + 1)
+
+    # def _count_usage(self, db):
+    #     for app in db.frequent_patterns:
+    #         # Iterate over top 3 guesses and update stats.
+    #         for pos in range(1, 4):
+    #             match self._get_usage_of_set(app, pos):
+    #                 case 0:
+    #                     self.used_never[pos - 1] += 1
+    #                 case 1:
+    #                     self.used_once_count[pos - 1] += 1
+    #                 case 2:
+    #                     self.used_twice_count[pos - 1] += 1
+    #                 case default:  # noqa: F841
+    #                     self.used_more_times[pos - 1] += 1
+
+    def _log_no_similar_apps_found(self, real_app):
         with Logger() as logger:
-            logger.warn("No similar apps found")
+            logger.warn(f"No similar apps found for {real_app}.")
 
     def _mark_set_as_used(self, app, pos=1):
         """
@@ -141,51 +155,54 @@ class PatternMatchingMethod:
                 logger.debug(count)
                 logger.debug("\n")
 
-    def display_statistics(self):
+    def display_statistics(self, is_comb=False):
         print("________________________________________________________")
-        print("Pattern matching:")
-        print(f"Correct: {self.correct}")
-        print(f"Incorrect: {self.incorrect}")
-        total = self.correct + self.incorrect
-        print(f"Total: {total}")
-        print()
         print(
-            f"First guess: {self.first_guess} ({round(self.first_guess / self.correct, 2)})"
+            "Apriori with combination of fingerprints:"
+            if is_comb
+            else "Apriori with fingerprints:"
         )
-        print(
-            f"Second guess: {self.second_guess} ({round(self.second_guess / self.correct, 2)})"
+
+        correct = self.comb_correct if is_comb else self.correct
+        incorrect = self.comb_incorrect if is_comb else self.incorrect
+
+        empty_candidates = (
+            self.empty_comb_candidates if is_comb else self.empty_candidates
         )
-        print(
-            f"Third guess: {self.third_guess} ({round(self.third_guess / self.correct, 2)})"
+
+        first_guess = self.comb_first_guess if is_comb else self.first_guess
+        second_guess = self.comb_second_guess if is_comb else self.second_guess
+        third_guess = self.comb_third_guess if is_comb else self.third_guess
+
+        len_of_candidates = (
+            self.comb_len_of_candidates if is_comb else self.len_of_candidates
         )
-        print()
-        print(f"Accuracy 1st guess : {round(self.first_guess / total, 4)}")
-        print(f"Accuracy 2nd guess : {round(self.second_guess / (total), 4)}")
-        print(f"Accuracy 3rd guess : {round(self.third_guess / (total), 4)}")
-        print(f"Accuracy overall: {round(self.correct / (total), 4)}")
-        print(f"Error rate: {round(self.incorrect / (total), 4)}")
-        print(f"Average len of candidates: {self.len_of_candidates / total}")
-        print()
 
-        print(f"Number of unique patterns sets: {self.uniq_count}")
-        print("Usage of distinct sets:")
-        print(f"{'Usage':<20}{'1st Guess':<12}{'2nd Guess':<12}{'3rd Guess':<12}")
+        total = self.number_of_tls
+        print(f"Correct: {correct}")
+        print(f"Incorrect: {incorrect}")
+        print(f"Empty candidates: {empty_candidates}")
+        print(f"Total: {total}\n")
 
-        categories = [
-            ("Used only once", self.used_once_count),
-            ("Used at least twice", self.used_twice_count),
-            ("Used more times", self.used_more_times),
-            ("Never used", self.used_never),
-        ]
+        print(f"First guess: {first_guess} ({round(first_guess / correct, 2)})")
+        print(f"Second guess: {second_guess} ({round(second_guess / correct, 2)})")
+        print(f"Third guess: {third_guess} ({round(third_guess / correct, 2)})\n")
 
-        for label, data in categories:
-            total = sum(data) if sum(data) > 0 else 1
-            percentages = [f"{(x / total):.4f}" for x in data]
-            print(
-                f"{label:<20}{data[0]:<3}({percentages[0]:<5}) {data[1]:<3}({percentages[1]:<5}) {data[2]:<3}({percentages[2]:<5})"
-            )
+        print(f"Accuracy 1st guess : {round(first_guess / total, 4)}")
+        print(f"Accuracy 2nd guess : {round(second_guess / total, 4)}")
+        print(f"Accuracy 3rd guess : {round(third_guess / total, 4)}")
+        print(f"Accuracy overall: {round(correct / total, 4)}")
+        print(f"Error rate: {round(incorrect / total, 4)}\n")
 
-        print(f"Uniqueness: {round(self.used_once_count[0] / self.uniq_count, 4)}")
+        avg_len = sum(len_of_candidates) / len(len_of_candidates)
+        median_len = np.median(len_of_candidates)
+        modus_len = max(set(len_of_candidates), key=len_of_candidates.count)
+        print(f"Average len of candidates: {avg_len}")
+        print(f"Median len of candidates: {median_len}")
+        print(f"Modus len of candidates: {modus_len}\n")
+
+        if not is_comb:
+            self.display_statistics(is_comb=True)
 
     def identify(self, df):
         raise NotImplementedError("This method should be overridden by subclasses")
@@ -281,7 +298,15 @@ class Apriori(PatternMatchingMethod):
 
     def _execute_apriori(self, group):
         processed_group = self._preprocess(group)
-        freq_items_set = apriori(processed_group, min_support=0.1, use_colnames=True)
+        with Logger() as logger:
+            logger.info(
+                f"Executing Apriori algorithm with min_support={self.min_support} ..."
+            )
+        freq_items_set = apriori(
+            processed_group,
+            min_support=self.min_support,
+            use_colnames=True,
+        )
 
         return freq_items_set
 
