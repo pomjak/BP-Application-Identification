@@ -4,12 +4,13 @@ Description: This file contains methods for identification of applications using
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 29/03/2025
+Updated: 03/04/2025
 """
 
 from constants import get_keys, APP_NAME
 from database import Database
 from logger import Logger
+import numpy as np
 
 
 class FingerprintingMethod:
@@ -25,8 +26,8 @@ class FingerprintingMethod:
         self.incorrect = 0
         self.correct_combination = 0
         self.incorrect_combination = 0
-        self.len_candidates = 0
-        self.len_candidates_combination = 0
+        self.len_candidates = []
+        self.len_candidates_combination = []
 
     def __get_statistics(self):
         return (
@@ -51,7 +52,14 @@ class FingerprintingMethod:
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
         print(f"Accuracy: {round((correct / total), 4)}")
-        print(f"Average number of candidates: {round(len_cand / total, 2)}")
+        avg_len = sum(len_cand) / len(len_cand)
+        median_len = np.median(len_cand)
+        modus_len = max(set(len_cand), key=len_cand.count)
+        print(f"Average len of candidates: {avg_len}")
+        print(f"Median len of candidates: {median_len}")
+        print(f"Modus len of candidates: {modus_len}")
+        print(f"Max len of candidates: {max(len_cand)}")
+        print(f"Min len of candidates: {min(len_cand)}\n")
 
         correct, incorrect, total, len_cand_comb = self.__get_statistics_combination()
         print("________________________________________________________")
@@ -61,17 +69,25 @@ class FingerprintingMethod:
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
         print(f"Accuracy: {round((correct / total), 4)}")
-        print(f"Average number of candidates: {round(len_cand_comb / total, 2)}")
+
+        avg_len = sum(len_cand_comb) / len(len_cand_comb)
+        median_len = np.median(len_cand_comb)
+        modus_len = max(set(len_cand_comb), key=len_cand_comb.count)
+        print(f"Average len of candidates: {avg_len}")
+        print(f"Median len of candidates: {median_len}")
+        print(f"Modus len of candidates: {modus_len}")
+        print(f"Max len of candidates: {max(len_cand_comb)}")
+        print(f"Min len of candidates: {min(len_cand_comb)}\n")
 
     def _resolve_and_update(self, appname, candidates):
-        self.len_candidates += len(candidates)
+        self.len_candidates.append(len(candidates))
         if appname in candidates:
             self.correct += 1
         else:
             self.incorrect += 1
 
     def _resolve_and_update_combination(self, appname, candidates):
-        self.len_candidates_combination += len(candidates)
+        self.len_candidates_combination.append(len(candidates))
         if appname in candidates:
             self.correct_combination += 1
         else:
