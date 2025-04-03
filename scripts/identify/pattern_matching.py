@@ -143,12 +143,13 @@ class PatternMatchingMethod:
                 logger.debug(count)
                 logger.debug("\n")
 
-    def display_statistics(self, is_comb=False, ja_version=4):
+    def display_statistics(self, is_comb=False):
         print("________________________________________________________")
+        ja_version = self.ja_version
         print(
             f"Apriori with JA{ja_version} + JA{ja_version}S + SNI:"
             if is_comb
-            else "Apriori with JA{ja_version}:"
+            else f"Apriori with JA{ja_version}:"
         )
 
         correct = self.comb_correct if is_comb else self.correct
