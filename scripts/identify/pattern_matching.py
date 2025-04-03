@@ -380,8 +380,10 @@ class Apriori(PatternMatchingMethod):
 
     def find_similarity(self, frequent_patterns, tls_group):
         top_scores = {}
+
         stripped_tls = tls_group.drop(columns=[col_names.FILE, col_names.APP_NAME])
         tls_set = frozenset(stripped_tls.values.flatten())
+
         pattern_counts = {
             app: len(patterns) for app, patterns in frequent_patterns.items()
         }
@@ -402,15 +404,10 @@ class Apriori(PatternMatchingMethod):
 
                 combined_score = jaccard * 0.3 + overlap * 0.5 + dice * 0.2
 
-                subset_bonus = 1 + (2 / (1 + np.log1p(num_patterns)))
-
                 total_score += (
-                    combined_score
-                    * (row["normalized_support"] + 1)
-                    * bonus_score
-                    * subset_bonus
+                    combined_score * (row["normalized_support"] + 1) * bonus_score
                 )
-
+            # Adjust score based on the number of patterns
             adjusted_score = total_score / ((np.log1p(num_patterns) + 1) ** 2.0)
 
             if adjusted_score > 0:
