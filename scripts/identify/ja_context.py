@@ -8,10 +8,10 @@ from logger import Logger
 
 class JA_Context(PatternMatchingMethod):
     def __init__(self, fingerprinting, context, sliding_window_size):
-        super().__init__(0.0)
+        super().__init__(0.15, context.ja_version)
 
-        self.fingerprinting = fingerprinting
         self.context = context
+        self.fingerprinting = fingerprinting
         self.sliding_window_size = sliding_window_size
 
     def identify(self, db: Database):
@@ -19,57 +19,92 @@ class JA_Context(PatternMatchingMethod):
             logger.info(
                 "Identifying applications using JA3/4 fingerprints and context..."
             )
+
             test_df = db.get_test_df()
-            # Group rows by filename
             grouped = test_df.groupby(Constants.FILE)
-            # Get unique filenames and shuffle them
             shuffled_filenames = np.random.permutation(test_df[Constants.FILE].unique())
 
-            # print average length of each group
-            avg_lengths = grouped.size().mean()
-            logger.info(f"Average length of each group: {avg_lengths}")
-            # Rebuild dataframe while keeping launches within a filename in order
+            logger.info(f"Average length of each group: {grouped.size().mean()}")
+
             shuffled_test_df = pd.concat(
                 [grouped.get_group(fname) for fname in shuffled_filenames]
-            )
-            # Reset index to ensure proper iteration
-            shuffled_test_df = shuffled_test_df.reset_index(drop=True)
-            # sliding window over testing dataset
-            window_size = self.sliding_window_size
-            logger.info(
-                f"Sliding window size: {window_size}, number of test launches: {len(shuffled_test_df)}"
-            )
-            self.number_of_tls = len(test_df) - window_size + 1
-            for i in range(self.number_of_tls):
-                window = shuffled_test_df.iloc[i : i + window_size]
-                row = window.iloc[window_size // 2]
+            ).reset_index(drop=True)
 
+            window_size = self.sliding_window_size
+            num_test_launches = len(shuffled_test_df)
+            self.number_of_tls = num_test_launches
+
+            logger.info(
+                f"Sliding window size: {window_size}, number of test launches: {num_test_launches}"
+            )
+
+            half_window = window_size // 2
+
+            for i in range(num_test_launches):
+                if i < half_window:
+                    # Fix window at the start, slide row in center of window
+                    window_start = 0
+                    row_index = i
+                elif i >= num_test_launches - half_window:
+                    # Fix window at the end, slide row till the end
+                    window_start = num_test_launches - window_size
+                    row_index = window_size - (num_test_launches - i)
+                else:
+                    # Normal sliding window behavior
+                    window_start = i - half_window
+                    row_index = half_window
+
+                window = shuffled_test_df.iloc[
+                    window_start : window_start + window_size
+                ]
+                row = window.iloc[row_index]
                 real_app = row[Constants.APP_NAME]
-                apps_in_window = window[Constants.APP_NAME].unique()
-                print(apps_in_window, real_app)
+
                 ja_candidates = self.fingerprinting.get_ja_candidates(row, db)
-                ja_combination_candidates = self.fingerprinting.get_ja_comb_candidates(
+                self.empty_ja += 1 if ja_candidates is None else 0
+
+                ja_comb_candidates = self.fingerprinting.get_ja_comb_candidates(
                     row, db, ja_candidates
                 )
+                self.empty_ja_comb += 1 if ja_comb_candidates is None else 0
 
-                db_for_ja = {
-                    key: db.frequent_patterns[key]
-                    for key in ja_candidates
-                    if key in db.frequent_patterns
-                }
-                db_for_ja_comb = {
-                    key: db.frequent_patterns[key]
-                    for key in ja_combination_candidates
-                    if key in db.frequent_patterns
-                }
+                db_for_ja = self._filter_frequent_patterns(db, ja_candidates)
+                db_for_ja_comb = self._filter_frequent_patterns(db, ja_comb_candidates)
 
-                ja_context_candidates = self.context.find_similarity(db_for_ja, window)
-
-                ja_comb_context_candidates = self.context.find_similarity(
-                    db_for_ja_comb, window
+                ja_context_candidates = self._find_context_candidates(
+                    db_for_ja, db, window, is_comb=False
+                )
+                ja_comb_context_candidates = self._find_context_candidates(
+                    db_for_ja_comb, db, window, is_comb=True
                 )
 
                 self._update_statistics(real_app, ja_context_candidates, is_comb=False)
                 self._update_statistics(
                     real_app, ja_comb_context_candidates, is_comb=True
                 )
+
+    def _filter_frequent_patterns(self, db, candidates):
+        return {
+            key: db.frequent_patterns[key]
+            for key in candidates
+            if key in db.frequent_patterns
+        }
+
+    def _find_context_candidates(self, db_subset, db, window, is_comb):
+        candidates = self.context.find_similarity(db_subset, window)
+        if not candidates:
+            candidates = self._use_pure_context(
+                db.frequent_patterns, db_subset, window, is_comb
+            )
+        return candidates
+
+    def _use_pure_context(self, patterns, db_subset, window, is_comb):
+        db_complement = {
+            key: value for key, value in patterns.items() if key not in db_subset
+        }
+        candidates = self.context.find_similarity(db_complement, window)
+        if is_comb:
+            self.pure_context_comb += 1
+        else:
+            self.pure_context += 1
+        return candidates

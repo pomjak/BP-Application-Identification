@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 31/03/2025
+Updated: 03/04/2025
 """
 
 from database import Database
@@ -21,7 +21,7 @@ import constants as col_names
 
 
 class PatternMatchingMethod:
-    def __init__(self, min_sup):
+    def __init__(self, min_sup, version):
         self.min_support = min_sup
         self.correct = 0
         self.incorrect = 0
@@ -38,18 +38,17 @@ class PatternMatchingMethod:
         self.empty_candidates = 0
         self.empty_comb_candidates = 0
 
-        # self.uniqueness = 0
-        # self.usage_of_patterns = {}
-        # self.used_once_count = [0, 0, 0]
-        # self.used_twice_count = [0, 0, 0]
-        # self.used_more_times = [0, 0, 0]
-        # self.used_never = [0, 0, 0]
-        # self.uniq_count = 0
-
         self.len_of_candidates = []
         self.comb_len_of_candidates = []
 
         self.number_of_tls = 0
+        self.pure_context = 0
+        self.pure_context_comb = 0
+
+        self.empty_ja = 0
+        self.empty_ja_comb = 0
+
+        self.ja_version = version
 
     def _update_statistics(self, real_app, top_similarities, is_comb=False):
         if top_similarities:
@@ -62,17 +61,20 @@ class PatternMatchingMethod:
             self._log_no_similar_apps_found(real_app)
 
     def _check_top_guesses(self, real_app, top_similarities, is_comb=False):
-        # If real app is 1st guess, update stats. Else check 2nd and 3rd guess.
+        # If real app is 1st, 2nd or 3rd guess, update the statistics, else increment incorrect.
         for rank, (app, _) in enumerate(top_similarities[:3], start=1):
             if real_app == app:
                 self._update_correct_guess(rank, app, is_comb)
                 break
         else:
-            self.incorrect += 1
+            if is_comb:
+                self.comb_incorrect += 1
+            else:
+                self.incorrect += 1
 
-        if is_comb:
+        if is_comb and len(top_similarities) > 0:
             self.comb_len_of_candidates.append(len(top_similarities))
-        else:
+        elif len(top_similarities) > 0:
             self.len_of_candidates.append(len(top_similarities))
 
     def _update_correct_guess(self, guess_rank, app, is_comb=False):
@@ -96,20 +98,6 @@ class PatternMatchingMethod:
             setattr(self, attr_map[guess_rank], getattr(self, attr_map[guess_rank]) + 1)
 
         setattr(self, correct_attr, getattr(self, correct_attr) + 1)
-
-    # def _count_usage(self, db):
-    #     for app in db.frequent_patterns:
-    #         # Iterate over top 3 guesses and update stats.
-    #         for pos in range(1, 4):
-    #             match self._get_usage_of_set(app, pos):
-    #                 case 0:
-    #                     self.used_never[pos - 1] += 1
-    #                 case 1:
-    #                     self.used_once_count[pos - 1] += 1
-    #                 case 2:
-    #                     self.used_twice_count[pos - 1] += 1
-    #                 case default:  # noqa: F841
-    #                     self.used_more_times[pos - 1] += 1
 
     def _log_no_similar_apps_found(self, real_app):
         with Logger() as logger:
@@ -155,12 +143,12 @@ class PatternMatchingMethod:
                 logger.debug(count)
                 logger.debug("\n")
 
-    def display_statistics(self, is_comb=False):
+    def display_statistics(self, is_comb=False, ja_version=4):
         print("________________________________________________________")
         print(
-            "Apriori with combination of fingerprints:"
+            f"Apriori with JA{ja_version} + JA{ja_version}S + SNI:"
             if is_comb
-            else "Apriori with fingerprints:"
+            else "Apriori with JA{ja_version}:"
         )
 
         correct = self.comb_correct if is_comb else self.correct
@@ -178,6 +166,10 @@ class PatternMatchingMethod:
             self.comb_len_of_candidates if is_comb else self.len_of_candidates
         )
 
+        pure_context = self.pure_context_comb if is_comb else self.pure_context
+
+        empty_ja = self.empty_ja_comb if is_comb else self.empty_ja
+
         total = self.number_of_tls
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
@@ -194,12 +186,17 @@ class PatternMatchingMethod:
         print(f"Accuracy overall: {round(correct / total, 4)}")
         print(f"Error rate: {round(incorrect / total, 4)}\n")
 
+        print(f"Empty JA candidates: {empty_ja} ({round(empty_ja / total, 2)})")
+        print(f"Pure context: {pure_context} ({round(pure_context / total, 2)})\n")
+
         avg_len = sum(len_of_candidates) / len(len_of_candidates)
         median_len = np.median(len_of_candidates)
         modus_len = max(set(len_of_candidates), key=len_of_candidates.count)
         print(f"Average len of candidates: {avg_len}")
         print(f"Median len of candidates: {median_len}")
-        print(f"Modus len of candidates: {modus_len}\n")
+        print(f"Modus len of candidates: {modus_len}")
+        print(f"Max len of candidates: {max(len_of_candidates)}")
+        print(f"Min len of candidates: {min(len_of_candidates)}\n")
 
         if not is_comb:
             self.display_statistics(is_comb=True)
@@ -247,11 +244,10 @@ class Apriori(PatternMatchingMethod):
         Add only UNIQUE frequent patterns to DB with support normalized to percentile rank.
         """
         patterns = patterns.drop_duplicates(subset="itemsets")  # Remove duplicates
-        patterns = patterns.sort_values(by="support", ascending=False)
 
-        median = patterns["support"].median()
-        patterns = patterns.drop(patterns[patterns["support"] < median].index)
-        patterns = patterns.reset_index(drop=True)
+        # median = patterns["support"].median()
+        # patterns = patterns.drop(patterns[patterns["support"] < median].index)
+        # patterns = patterns.reset_index(drop=True)
 
         db.frequent_patterns[app] = pd.DataFrame(patterns)
         db.frequent_patterns[app] = self._normalize_support(db.frequent_patterns[app])
