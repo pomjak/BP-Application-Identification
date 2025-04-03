@@ -7,8 +7,18 @@ from logger import Logger
 
 
 class JA_Context(PatternMatchingMethod):
-    def __init__(self, fingerprinting, context, sliding_window_size):
-        super().__init__(0.15, context.ja_version)
+    def __init__(
+        self,
+        fingerprinting,
+        context,
+        sliding_window_size,
+        max_candidates_size,
+    ):
+        super().__init__(
+            0.15,
+            context.ja_version,
+            max_candidates_size,
+        )
 
         self.context = context
         self.fingerprinting = fingerprinting

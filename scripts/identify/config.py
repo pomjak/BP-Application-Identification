@@ -4,7 +4,7 @@ Description: This file contains the config class which parses and stores command
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 31/03/2025
+Updated: 03/04/2025
 """
 
 import argparse
@@ -29,6 +29,9 @@ class Config:
 
             self.min_support = args.min_support
             logger.info(f"Minimum support set: {self.min_support}")
+
+            self.max_candidates_length = args.max_candidates_length
+            logger.info(f"Maximum candidates length set: {self.max_candidates_length}")
 
     def __parse_arguments(self):
         parser = argparse.ArgumentParser(
@@ -61,6 +64,14 @@ class Config:
             type=float,
             help="minimum support for frequent pattern mining",
             default=0.1,
+        )
+
+        parser.add_argument(
+            "-c",
+            "--max_candidates_length",
+            type=int,
+            help="maximum length of candidate patterns",
+            default=4,
         )
 
         return parser.parse_args()

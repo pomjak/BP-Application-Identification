@@ -21,19 +21,16 @@ import constants as col_names
 
 
 class PatternMatchingMethod:
-    def __init__(self, min_sup, version):
+    def __init__(self, min_sup, version, max_candidates_size):
         self.min_support = min_sup
-        self.correct = 0
-        self.incorrect = 0
-        self.first_guess = 0
-        self.second_guess = 0
-        self.third_guess = 0
+        self.ja_version = version
+        self.candidate_size = max_candidates_size
 
-        self.comb_correct = 0
+        self.correct = [0] * self.candidate_size
+        self.incorrect = 0
+
+        self.comb_correct = [0] * self.candidate_size
         self.comb_incorrect = 0
-        self.comb_first_guess = 0
-        self.comb_second_guess = 0
-        self.comb_third_guess = 0
 
         self.empty_candidates = 0
         self.empty_comb_candidates = 0
@@ -48,8 +45,6 @@ class PatternMatchingMethod:
         self.empty_ja = 0
         self.empty_ja_comb = 0
 
-        self.ja_version = version
-
     def _update_statistics(self, real_app, top_similarities, is_comb=False):
         if top_similarities:
             self._check_top_guesses(real_app, top_similarities, is_comb)
@@ -61,8 +56,11 @@ class PatternMatchingMethod:
             self._log_no_similar_apps_found(real_app)
 
     def _check_top_guesses(self, real_app, top_similarities, is_comb=False):
-        # If real app is 1st, 2nd or 3rd guess, update the statistics, else increment incorrect.
-        for rank, (app, _) in enumerate(top_similarities[:3], start=1):
+        # If real app is 1st to candidate_size guess, update the statistics,
+        # else increment incorrect.
+        for rank, (app, _) in enumerate(
+            top_similarities[: self.candidate_size], start=1
+        ):
             if real_app == app:
                 self._update_correct_guess(rank, app, is_comb)
                 break
@@ -80,24 +78,14 @@ class PatternMatchingMethod:
     def _update_correct_guess(self, guess_rank, app, is_comb=False):
         # Update stats based on which guess was correct.
         if is_comb:
-            attr_map = {
-                1: "comb_first_guess",
-                2: "comb_second_guess",
-                3: "comb_third_guess",
-            }
-            correct_attr = "comb_correct"
+            if not self.comb_correct[guess_rank - 1]:
+                self.comb_correct[guess_rank - 1] = 0
+            self.comb_correct[guess_rank - 1] += 1
+
         else:
-            attr_map = {
-                1: "first_guess",
-                2: "second_guess",
-                3: "third_guess",
-            }
-            correct_attr = "correct"
-
-        if guess_rank in attr_map:
-            setattr(self, attr_map[guess_rank], getattr(self, attr_map[guess_rank]) + 1)
-
-        setattr(self, correct_attr, getattr(self, correct_attr) + 1)
+            if not self.correct[guess_rank - 1]:
+                self.correct[guess_rank - 1] = 0
+            self.correct[guess_rank - 1] += 1
 
     def _log_no_similar_apps_found(self, real_app):
         with Logger() as logger:
@@ -152,16 +140,12 @@ class PatternMatchingMethod:
             else f"Apriori with JA{ja_version}:"
         )
 
-        correct = self.comb_correct if is_comb else self.correct
+        correct = sum(self.comb_correct) if is_comb else sum(self.correct)
         incorrect = self.comb_incorrect if is_comb else self.incorrect
 
         empty_candidates = (
             self.empty_comb_candidates if is_comb else self.empty_candidates
         )
-
-        first_guess = self.comb_first_guess if is_comb else self.first_guess
-        second_guess = self.comb_second_guess if is_comb else self.second_guess
-        third_guess = self.comb_third_guess if is_comb else self.third_guess
 
         len_of_candidates = (
             self.comb_len_of_candidates if is_comb else self.len_of_candidates
@@ -177,15 +161,13 @@ class PatternMatchingMethod:
         print(f"Empty candidates: {empty_candidates}")
         print(f"Total: {total}\n")
 
-        print(f"First guess: {first_guess} ({round(first_guess / correct, 2)})")
-        print(f"Second guess: {second_guess} ({round(second_guess / correct, 2)})")
-        print(f"Third guess: {third_guess} ({round(third_guess / correct, 2)})\n")
-
-        print(f"Accuracy 1st guess : {round(first_guess / total, 4)}")
-        print(f"Accuracy 2nd guess : {round(second_guess / total, 4)}")
-        print(f"Accuracy 3rd guess : {round(third_guess / total, 4)}")
         print(f"Accuracy overall: {round(correct / total, 4)}")
         print(f"Error rate: {round(incorrect / total, 4)}\n")
+
+        for i in range(self.candidate_size):
+            print(
+                f"{i+1}. guess: {self.correct[i]} ({round(self.correct[i] / total, 2)})"
+            )
 
         print(f"Empty JA candidates: {empty_ja} ({round(empty_ja / total, 2)})")
         print(f"Pure context: {pure_context} ({round(pure_context / total, 2)})\n")
@@ -242,7 +224,7 @@ class Apriori(PatternMatchingMethod):
 
     def _add_patterns_to_db(self, app, patterns, db):
         """
-        Add only UNIQUE frequent patterns to DB with support normalized to percentile rank.
+        Add only UNIQUE frequent patterns to DB with normalized support.
         """
         patterns = patterns.drop_duplicates(subset="itemsets")  # Remove duplicates
 
@@ -418,4 +400,6 @@ class Apriori(PatternMatchingMethod):
         norm_scores = self._minmax_normalize(top_scores)
 
         # Return top 3 apps with highest scores
-        return heapq.nlargest(3, norm_scores.items(), key=lambda x: x[1])
+        return heapq.nlargest(
+            self.candidate_size, norm_scores.items(), key=lambda x: x[1]
+        )

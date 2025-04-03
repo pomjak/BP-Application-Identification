@@ -28,13 +28,18 @@ def main():
         fingerprinting.identify(db)
         fingerprinting.display_statistics()
 
-        context = Apriori(config.min_support, config.ja_version)
+        context = Apriori(
+            config.min_support,
+            config.ja_version,
+            config.max_candidates_length,
+        )
         context.train(db)
 
         ja_context = JA_Context(
             fingerprinting,
             context,
             config.sliding_window_size,
+            config.max_candidates_length,
         )
         ja_context.identify(db)
         ja_context.display_statistics()
