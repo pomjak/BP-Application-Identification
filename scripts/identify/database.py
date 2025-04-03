@@ -55,8 +55,8 @@ class Database:
                 [
                     col_names.APP_NAME,
                     col_names.FILE,
-                    col_names.JA3,
-                    col_names.JA3_S,
+                    # col_names.JA3,
+                    # col_names.JA3_S,
                     col_names.JA4,
                     col_names.JA4_S,
                     col_names.SNI,

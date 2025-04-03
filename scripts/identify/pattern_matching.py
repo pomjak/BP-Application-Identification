@@ -378,7 +378,7 @@ class Apriori(PatternMatchingMethod):
 
             for _, row in patterns.iterrows():
                 pattern_set = frozenset(row["itemsets"])
-
+                # total_score += 1 if pattern_set.issubset(tls_set) else 0
                 jaccard = self._jaccard_similarity(tls_set, pattern_set)
                 overlap = self._overlap_similarity(tls_set, pattern_set)
                 dice = self._dice_similarity(tls_set, pattern_set)

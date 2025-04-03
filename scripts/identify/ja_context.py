@@ -31,17 +31,21 @@ class JA_Context(PatternMatchingMethod):
             )
 
             test_df = db.get_test_df()
-            grouped = test_df.groupby(Constants.FILE)
-            shuffled_filenames = np.random.permutation(test_df[Constants.FILE].unique())
 
-            logger.info(f"Average length of each group: {grouped.size().mean()}")
+            # grouped = test_df.groupby(Constants.FILE)
+            # for _, group in grouped:
+            #     print(group)
+            # exit()
+            # shuffled_filenames = np.random.permutation(test_df[Constants.FILE].unique())
 
-            shuffled_test_df = pd.concat(
-                [grouped.get_group(fname) for fname in shuffled_filenames]
-            ).reset_index(drop=True)
+            # logger.info(f"Average length of each group: {grouped.size().mean()}")
+
+            # shuffled_test_df = pd.concat(
+            #     [grouped.get_group(fname) for fname in shuffled_filenames]
+            # ).reset_index(drop=True)
 
             window_size = self.sliding_window_size
-            num_test_launches = len(shuffled_test_df)
+            num_test_launches = len(test_df)
             self.number_of_tls = num_test_launches
 
             logger.info(
@@ -56,15 +60,11 @@ class JA_Context(PatternMatchingMethod):
                 )
                 row_index = i - window_start
 
-                window = shuffled_test_df.iloc[
-                    window_start : window_start + window_size
-                ]
+                window = test_df.iloc[window_start : window_start + window_size]
                 row = window.iloc[row_index]
                 real_app = row[Constants.APP_NAME]
 
-                window = shuffled_test_df.iloc[
-                    window_start : window_start + window_size
-                ]
+                window = test_df.iloc[window_start : window_start + window_size]
                 row = window.iloc[row_index]
                 real_app = row[Constants.APP_NAME]
 
