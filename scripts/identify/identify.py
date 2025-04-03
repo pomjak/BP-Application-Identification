@@ -4,7 +4,7 @@ Description: Main file for identification of applications using JA3/4 fingerprin
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 25/03/2025
+Updated: 03/04/2025
 """
 
 from logger import Logger
@@ -12,8 +12,8 @@ from config import Config
 from database import Database
 from fingerprinting import FingerprintingMethod
 from pattern_matching import Apriori
+from ja_context import JA_Context
 import time
-from result_merger import ResultMerger
 
 
 def main():
@@ -25,15 +25,19 @@ def main():
 
         fingerprinting = FingerprintingMethod(config.ja_version)
         db.create_lookup_table(config.ja_version)
-
         fingerprinting.identify(db)
         fingerprinting.display_statistics()
 
-        context = Apriori()
+        context = Apriori(config.min_support, config.ja_version)
         context.train(db)
-        context.identify(db)
-        context.display_statistics()
 
+        ja_context = JA_Context(
+            fingerprinting,
+            context,
+            config.sliding_window_size,
+        )
+        ja_context.identify(db)
+        ja_context.display_statistics()
         logger.info("[FINISH]")
 
 
