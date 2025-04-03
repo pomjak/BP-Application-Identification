@@ -41,18 +41,16 @@ class JA_Context(PatternMatchingMethod):
             half_window = window_size // 2
 
             for i in range(num_test_launches):
-                if i < half_window:
-                    # Fix window at the start, slide row in center of window
-                    window_start = 0
-                    row_index = i
-                elif i >= num_test_launches - half_window:
-                    # Fix window at the end, slide row till the end
-                    window_start = num_test_launches - window_size
-                    row_index = window_size - (num_test_launches - i)
-                else:
-                    # Normal sliding window behavior
-                    window_start = i - half_window
-                    row_index = half_window
+                window_start = np.clip(
+                    i - half_window, 0, num_test_launches - window_size
+                )
+                row_index = i - window_start
+
+                window = shuffled_test_df.iloc[
+                    window_start : window_start + window_size
+                ]
+                row = window.iloc[row_index]
+                real_app = row[Constants.APP_NAME]
 
                 window = shuffled_test_df.iloc[
                     window_start : window_start + window_size
