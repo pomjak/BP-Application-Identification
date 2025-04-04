@@ -5,7 +5,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 03/04/2025
+Updated: 04/04/2025
 """
 
 import constants as col_names
@@ -86,7 +86,7 @@ class Database:
                 if len(group) > 1:
 
                     train_group, test_group = train_test_split(
-                        group, test_size=0.3, shuffle=False
+                        group, test_size=0.25, shuffle=False
                     )
                     # FIXME do not append to list, just group them
                     train_list.append(train_group)

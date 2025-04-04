@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 03/04/2025
+Updated: 04/04/2025
 """
 
 from database import Database
@@ -165,8 +165,14 @@ class PatternMatchingMethod:
         print(f"Error rate: {round(incorrect / total, 4)}\n")
 
         for i in range(self.candidate_size):
-            print(
-                f"{i+1}. guess: {self.correct[i]} ({round(self.correct[i] / total, 2)})"
+            (
+                print(
+                    f"{i + 1}. guess: {self.correct[i]} ({round(self.correct[i] / total, 2)})"
+                )
+                if not is_comb
+                else print(
+                    f"{i + 1}. guess: {self.comb_correct[i]} ({round(self.comb_correct[i] / total, 2)})"
+                )
             )
 
         print(f"Empty JA candidates: {empty_ja} ({round(empty_ja / total, 2)})")
@@ -205,7 +211,6 @@ class Apriori(PatternMatchingMethod):
             for _, multiple_launches_of_one_app in tls_entries_of_apps:
                 self._train_group(multiple_launches_of_one_app, db)
             self.log_patterns(db)
-            # exit(0)
 
     def log_patterns(self, db):
         with Logger() as logger:
@@ -226,11 +231,18 @@ class Apriori(PatternMatchingMethod):
         """
         Add only UNIQUE frequent patterns to DB with normalized support.
         """
-        patterns = patterns.drop_duplicates(subset="itemsets")  # Remove duplicates
+        # Remove duplicates
+        patterns = patterns.drop_duplicates(subset="itemsets")
 
-        # median = patterns["support"].median()
-        # patterns = patterns.drop(patterns[patterns["support"] < median].index)
-        # patterns = patterns.reset_index(drop=True)
+        # Remove patterns with only one item.
+        patterns.drop(
+            patterns[patterns["itemsets"].apply(len) == 1].index, inplace=True
+        )
+        # Sort by support
+        patterns.sort_values(by=["support"], ascending=False, inplace=True)
+        # Select only the top 10 patterns
+        patterns = patterns.head(50)
+        patterns = patterns.reset_index(drop=True)
 
         db.frequent_patterns[app] = pd.DataFrame(patterns)
         db.frequent_patterns[app] = self._normalize_support(db.frequent_patterns[app])
@@ -330,23 +342,15 @@ class Apriori(PatternMatchingMethod):
                 # Update statistics based on the results.
                 self._update_statistics(real_app, top_guesses)
 
-    def _debug_identify_print(self, real_app, top_guesses, warn=False):
+    def _debug_identify_print(self, real_app, top_guesses):
         if col_names.DEBUG_ENABLED:
             print(f"\033[1m{real_app}\033[0m:", end=" ")
-            if warn:
-                for app, similarity in top_guesses:
-                    if real_app == app:
-                        print(f"\033[1;32m{app} {similarity:.2f}\033[0m", end="; ")
-                    else:
-                        print(f"\033[1;33m{app} {similarity:.2f}\033[0m", end="; ")
-                print()
-            else:
-                for app, similarity in top_guesses:
-                    if real_app == app:
-                        print(f"\033[1;32m{app} {similarity:.2f}\033[0m", end="; ")
-                    else:
-                        print(f"{app} {similarity:.2f}", end="; ")
-                print()
+            for app, similarity in top_guesses:
+                if real_app == app:
+                    print(f"\033[1;32m{app} {similarity:.2f}\033[0m", end="; ")
+                else:
+                    print(f"{app} {similarity:.2f}", end="; ")
+            print()
 
     def _minmax_normalize(self, scores):
         if not scores:
@@ -362,39 +366,38 @@ class Apriori(PatternMatchingMethod):
         return {k: (v - min_score) / (max_score - min_score) for k, v in scores.items()}
 
     def find_similarity(self, frequent_patterns, tls_group):
+        if not frequent_patterns:
+            return {}
         top_scores = {}
 
         stripped_tls = tls_group.drop(columns=[col_names.FILE, col_names.APP_NAME])
         tls_set = frozenset(stripped_tls.values.flatten())
 
-        pattern_counts = {
-            app: len(patterns) for app, patterns in frequent_patterns.items()
-        }
-
         for app, patterns in frequent_patterns.items():
             # Reset total score for each app
             total_score = 0
-            num_patterns = pattern_counts[app]
 
             for _, row in patterns.iterrows():
                 pattern_set = frozenset(row["itemsets"])
-                # total_score += 1 if pattern_set.issubset(tls_set) else 0
-                jaccard = self._jaccard_similarity(tls_set, pattern_set)
-                overlap = self._overlap_similarity(tls_set, pattern_set)
-                dice = self._dice_similarity(tls_set, pattern_set)
+                # total_score += (
+                #     1
+                #     * (row["normalized_support"] + 1)
+                #     * (self._jaccard_similarity(tls_set, pattern_set) + 1)
+                #     if pattern_set.issubset(tls_set)
+                #     else 0
+                # )
+                jaccard = self._jaccard_similarity(tls_set, pattern_set) + 1
+                overlap = self._overlap_similarity(tls_set, pattern_set) + 1
+                dice = self._dice_similarity(tls_set, pattern_set) + 1
 
                 bonus_score = 50 if pattern_set.issubset(tls_set) else 1
 
-                combined_score = jaccard * 0.3 + overlap * 0.5 + dice * 0.2
+                combined_score = jaccard * 0.05 + overlap * 0.9 + dice * 0.05
 
-                total_score += (
-                    combined_score * (row["normalized_support"] + 1) * bonus_score
-                )
-            # Adjust score based on the number of patterns
-            adjusted_score = total_score / ((np.log1p(num_patterns) + 1) ** 2.0)
+                total_score += overlap * (row["normalized_support"] + 1) * bonus_score
 
-            if adjusted_score > 0:
-                top_scores[app] = adjusted_score
+            if total_score > 0:
+                top_scores[app] = total_score
 
         # Normalize scores using Min-Max Scaling
         norm_scores = self._minmax_normalize(top_scores)
