@@ -58,7 +58,7 @@ class JA_Context(PatternMatchingMethod):
             )
 
             test_df = db.get_test_df()
-            # test_df = self.shuffle_df(test_df)
+            test_df = self.shuffle_df(test_df)
 
             window_size = self.sliding_window_size
             num_test_launches = len(test_df)
@@ -137,20 +137,28 @@ class JA_Context(PatternMatchingMethod):
         }
 
     def _find_context_candidates(self, db_subset, db, window, is_comb):
-        if not db_subset:
-            with Logger() as logger:
+        with Logger() as logger:
+            if not db_subset:
                 logger.info(
                     f"Subset of db is empty {db_subset}, using whole database for context.{'[comb]' if is_comb else ''}"
                 )
-            return self.context.find_similarity(db.frequent_patterns, window)
+                if is_comb:
+                    self.context_using_whole_db_comb += 1
+                else:
+                    self.context_using_whole_db += 1
+                return self.context.find_similarity(db.frequent_patterns, window)
 
-        candidates = self.context.find_similarity(db_subset, window)
+            candidates = self.context.find_similarity(db_subset, window)
 
-        if candidates:
+            if not candidates:
+                logger.info("Candidates is empty. Falling back to pure context.")
+                # Fallback to pure context if no candidates are found
+                return self._use_pure_context(
+                    db.frequent_patterns, db_subset, window, is_comb
+                )
+            else:
+                logger.debug(f"Candidates: {candidates}")
             return candidates
-
-        # Fallback to pure context if no candidates are found
-        return self._use_pure_context(db.frequent_patterns, db_subset, window, is_comb)
 
     def _use_pure_context(self, patterns, db_subset, window, is_comb):
         with Logger() as logger:

@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 04/04/2025
+Updated: 05/04/2025
 """
 
 from database import Database
@@ -44,6 +44,9 @@ class PatternMatchingMethod:
 
         self.empty_ja = 0
         self.empty_ja_comb = 0
+
+        self.context_using_whole_db = 0
+        self.context_using_whole_db_comb = 0
 
     def _update_statistics(self, real_app, top_similarities, is_comb=False):
         if top_similarities:
@@ -155,6 +158,10 @@ class PatternMatchingMethod:
 
         empty_ja = self.empty_ja_comb if is_comb else self.empty_ja
 
+        context_using_whole_db = (
+            self.context_using_whole_db_comb if is_comb else self.context_using_whole_db
+        )
+
         total = self.number_of_tls
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
@@ -176,7 +183,10 @@ class PatternMatchingMethod:
             )
 
         print(f"Empty JA candidates: {empty_ja} ({round(empty_ja / total, 2)})")
-        print(f"Pure context: {pure_context} ({round(pure_context / total, 2)})\n")
+        print(f"Pure context: {pure_context} ({round(pure_context / total, 2)})")
+        print(
+            f"Context using whole db: {context_using_whole_db} ({round(context_using_whole_db / total, 2)})\n"
+        )
 
         avg_len = sum(len_of_candidates) / len(len_of_candidates)
         median_len = np.median(len_of_candidates)
@@ -235,13 +245,13 @@ class Apriori(PatternMatchingMethod):
         patterns = patterns.drop_duplicates(subset="itemsets")
 
         # Remove patterns with only one item.
-        patterns.drop(
-            patterns[patterns["itemsets"].apply(len) == 1].index, inplace=True
-        )
+        # patterns.drop(
+        #     patterns[patterns["itemsets"].apply(len) == 1].index, inplace=True
+        # )
         # Sort by support
         patterns.sort_values(by=["support"], ascending=False, inplace=True)
         # Select only the top 10 patterns
-        patterns = patterns.head(50)
+        patterns = patterns.head(10)
         patterns = patterns.reset_index(drop=True)
 
         db.frequent_patterns[app] = pd.DataFrame(patterns)
@@ -379,21 +389,9 @@ class Apriori(PatternMatchingMethod):
 
             for _, row in patterns.iterrows():
                 pattern_set = frozenset(row["itemsets"])
-                # total_score += (
-                #     1
-                #     * (row["normalized_support"] + 1)
-                #     * (self._jaccard_similarity(tls_set, pattern_set) + 1)
-                #     if pattern_set.issubset(tls_set)
-                #     else 0
-                # )
-                jaccard = self._jaccard_similarity(tls_set, pattern_set) + 1
+
                 overlap = self._overlap_similarity(tls_set, pattern_set) + 1
-                dice = self._dice_similarity(tls_set, pattern_set) + 1
-
                 bonus_score = 50 if pattern_set.issubset(tls_set) else 1
-
-                combined_score = jaccard * 0.05 + overlap * 0.9 + dice * 0.05
-
                 total_score += overlap * (row["normalized_support"] + 1) * bonus_score
 
             if total_score > 0:
