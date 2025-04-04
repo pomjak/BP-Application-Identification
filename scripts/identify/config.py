@@ -4,7 +4,7 @@ Description: This file contains the config class which parses and stores command
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 03/04/2025
+Updated: 04/04/2025
 """
 
 import argparse
@@ -51,7 +51,7 @@ class Config:
         )
 
         parser.add_argument(
-            "-s",
+            "-w",
             "--sliding_window_size",
             type=int,
             help="size of sliding window",
