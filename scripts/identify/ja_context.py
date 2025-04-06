@@ -61,78 +61,103 @@ class JA_Context(PatternMatchingMethod):
 
     def identify(self, db: Database):
         with Logger() as logger:
-            logger.info(
-                "Identifying applications using JA3/4 fingerprints and context..."
-            )
+            self._log_identification_start()
 
-            test_df = db.get_test_df()
-            test_df = self.shuffle_df(test_df)
-
-            window_size = self.sliding_window_size
+            test_df = self._prepare_test_data(db)
             num_test_launches = len(test_df)
             self.number_of_tls = num_test_launches
 
             logger.info(
-                f"Sliding window size: {window_size}, number of test launches: {num_test_launches}"
+                f"Sliding window size: {self.sliding_window_size}, "
+                f"number of test launches: {num_test_launches}"
             )
 
-            half_window = window_size // 2
-
             for i in range(num_test_launches):
-                window_start = np.clip(
-                    i - half_window, 0, num_test_launches - window_size
-                )
-                row_index_within_window = i - window_start
+                self._process_window(i, test_df, db)
 
-                window = test_df.iloc[window_start : window_start + window_size]
-                row = window.iloc[row_index_within_window]
-                real_app = row[Constants.APP_NAME]
-                logger.debug(
-                    f"Window position: start={window_start}, end={window_start + window_size - 1}"
-                )
-                logger.debug(f"Row index within window: {row_index_within_window}")
-                logger.debug(f"Real app: {real_app}")
+    def _log_identification_start(self):
+        with Logger() as logger:
+            logger.info(
+                "Identifying applications using JA3/4 fingerprints and context..."
+            )
 
-                self._log_apps_in_window(window)
+    def _prepare_test_data(self, db: Database):
+        test_df = db.get_test_df()
+        return self.shuffle_df(test_df)
 
-                ja_candidates = self.fingerprinting.get_ja_candidates(row, db)
+    def _process_window(self, index: int, test_df, db: Database):
+        with Logger() as logger:
+            window_size = self.sliding_window_size
+            half_window = window_size // 2
+            num_test_launches = len(test_df)
 
-                if not ja_candidates:
-                    logger.warn("Empty JA candidates")
-                    self.empty_ja += 1
-                else:
-                    logger.debug(f"JA: {ja_candidates}")
+            window_start = np.clip(
+                index - half_window, 0, num_test_launches - window_size
+            )
+            row_index_within_window = index - window_start
 
-                ja_comb_candidates = self.fingerprinting.get_ja_comb_candidates(
-                    row, db, ja_candidates
-                )
-                if not ja_comb_candidates:
-                    logger.warn("Empty JA_comb candidates")
-                    self.empty_ja_comb += 1
-                else:
-                    logger.debug(f"JA COMB: {ja_comb_candidates}")
+            window = test_df.iloc[window_start : window_start + window_size]
+            row = window.iloc[row_index_within_window]
+            real_app = row[Constants.APP_NAME]
 
-                db_for_ja = self._filter_frequent_patterns(db, ja_candidates)
-                db_for_ja_comb = self._filter_frequent_patterns(db, ja_comb_candidates)
+            logger.debug(
+                f"Window position: start={window_start}, end={window_start + window_size - 1}"
+            )
+            logger.debug(f"Row index within window: {row_index_within_window}")
+            logger.debug(f"Real app: {real_app}")
 
-                ja_context_candidates = self._find_context_candidates(
-                    db_for_ja, db, window, is_comb=False
-                )
-                logger.debug(
-                    f"CONTEXT (JA) : {[app for (app, score) in ja_context_candidates]}"
-                )
+        self._log_apps_in_window(window)
 
-                ja_comb_context_candidates = self._find_context_candidates(
-                    db_for_ja_comb, db, window, is_comb=True
-                )
-                logger.debug(
-                    f"CONTEXT (JA COMB): {[app for (app, score) in ja_comb_context_candidates]}\n"
-                )
+        ja_candidates = self._get_ja_candidates(row, db)
+        ja_comb_candidates = self._get_ja_comb_candidates(row, db, ja_candidates)
 
-                self._update_statistics(real_app, ja_context_candidates, is_comb=False)
-                self._update_statistics(
-                    real_app, ja_comb_context_candidates, is_comb=True
-                )
+        self._evaluate_context_and_update_stats(
+            db, window, real_app, ja_candidates, ja_comb_candidates
+        )
+
+    def _get_ja_candidates(self, row, db):
+        with Logger() as logger:
+            candidates = self.fingerprinting.get_ja_candidates(row, db)
+            if not candidates:
+                logger.warn("Empty JA candidates")
+                self.empty_ja += 1
+            else:
+                logger.debug(f"JA: {candidates}")
+            return candidates
+
+    def _get_ja_comb_candidates(self, row, db, ja_candidates):
+        with Logger() as logger:
+            candidates = self.fingerprinting.get_ja_comb_candidates(
+                row, db, ja_candidates
+            )
+            if not candidates:
+                logger.warn("Empty JA_comb candidates")
+                self.empty_ja_comb += 1
+            else:
+                logger.debug(f"JA COMB: {candidates}")
+            return candidates
+
+    def _evaluate_context_and_update_stats(
+        self, db, window, real_app, ja_candidates, ja_comb_candidates
+    ):
+        with Logger() as logger:
+            db_for_ja = self._filter_frequent_patterns(db, ja_candidates)
+            db_for_ja_comb = self._filter_frequent_patterns(db, ja_comb_candidates)
+
+            ja_context = self._find_context_candidates(
+                db_for_ja, db, window, is_comb=False
+            )
+            logger.debug(f"CONTEXT (JA) : {[app for (app, score) in ja_context]}")
+
+            ja_comb_context = self._find_context_candidates(
+                db_for_ja_comb, db, window, is_comb=True
+            )
+            logger.debug(
+                f"CONTEXT (JA COMB): {[app for (app, score) in ja_comb_context]}\n"
+            )
+
+            self._update_statistics(real_app, ja_context, is_comb=False)
+            self._update_statistics(real_app, ja_comb_context, is_comb=True)
 
     def _filter_frequent_patterns(self, db, candidates):
         if not candidates:
@@ -147,40 +172,57 @@ class JA_Context(PatternMatchingMethod):
     def _find_context_candidates(self, db_subset, db, window, is_comb):
         with Logger() as logger:
             if not db_subset:
-                logger.info(
-                    f"Subset of db is empty {db_subset}, using whole database for context.{'[comb]' if is_comb else ''}"
-                )
-                if is_comb:
-                    self.context_using_whole_db_comb += 1
-                else:
-                    self.context_using_whole_db += 1
+                self._log_empty_subset_and_increment_counter(logger, is_comb)
                 return self.context.find_similarity(db.frequent_patterns, window)
 
             candidates = self.context.find_similarity(db_subset, window)
 
             if not candidates:
-                logger.info("Candidates is empty. Falling back to pure context.")
-                # Fallback to pure context if no candidates are found
+                logger.info("No candidates found. Falling back to pure context.")
                 return self._use_pure_context(
                     db.frequent_patterns, db_subset, window, is_comb
                 )
+
             return candidates
+
+    def _log_empty_subset_and_increment_counter(self, logger, is_comb):
+        context_label = "[comb]" if is_comb else ""
+        logger.info(
+            f"Subset of DB is empty, using whole database for context. {context_label}"
+        )
+
+        if is_comb:
+            self.context_using_whole_db_comb += 1
+        else:
+            self.context_using_whole_db += 1
 
     def _use_pure_context(self, patterns, db_subset, window, is_comb):
         with Logger() as logger:
+            context_type = "[comb]" if is_comb else ""
             logger.info(
-                f"Failed finding similarity with subset db. Using pure context with complement of db.{'[comb]' if is_comb else ''}"
+                f"Failed to find similarity with subset db. Falling back to pure context using complement of db. {context_type}"
             )
-            logger.debug(f"Database subset: {db_subset.keys()}")
-            db_complement = {
-                key: value for key, value in patterns.items() if key not in db_subset
-            }
-            logger.debug(f"Database complement: {db_complement.keys()}")
+
+            self._increment_pure_context_counter(is_comb)
+
+            logger.debug(f"Database subset keys: {list(db_subset.keys())}")
+
+            db_complement = self._get_db_complement(patterns, db_subset)
+            logger.debug(f"Database complement keys: {list(db_complement.keys())}")
+
             candidates = self.context.find_similarity(db_complement, window)
-            if is_comb:
-                self.pure_context_comb += 1
-            else:
-                self.pure_context += 1
+
             if not candidates:
+                logger.info("No candidates found in complement. Using full patterns.")
                 candidates = self.context.find_similarity(patterns, window)
-        return candidates
+
+            return candidates
+
+    def _increment_pure_context_counter(self, is_comb):
+        if is_comb:
+            self.pure_context_comb += 1
+        else:
+            self.pure_context += 1
+
+    def _get_db_complement(self, patterns, db_subset):
+        return {key: value for key, value in patterns.items() if key not in db_subset}
