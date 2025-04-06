@@ -51,6 +51,14 @@ class JA_Context(PatternMatchingMethod):
             [grouped_by_file.get_group(fname) for fname in shuffled_filenames]
         ).reset_index(drop=True)
 
+    def _log_apps_in_window(self, window):
+        with Logger() as logger:
+            files_in_window = window.groupby(Constants.FILE)
+            apps_in_window = []
+            for _, file in files_in_window:
+                apps_in_window.append(file[Constants.APP_NAME].iloc[0])
+            logger.debug(f"Apps in window: {apps_in_window}")
+
     def identify(self, db: Database):
         with Logger() as logger:
             logger.info(
@@ -85,15 +93,15 @@ class JA_Context(PatternMatchingMethod):
                 logger.debug(f"Row index within window: {row_index_within_window}")
                 logger.debug(f"Real app: {real_app}")
 
-                files_in_window = window[Constants.FILE]
-                logger.debug(f"Files in window: {files_in_window.values}")
+                self._log_apps_in_window(window)
+
                 ja_candidates = self.fingerprinting.get_ja_candidates(row, db)
 
                 if not ja_candidates:
                     logger.warn("Empty JA candidates")
                     self.empty_ja += 1
                 else:
-                    logger.debug(f"JA candidates: {ja_candidates}")
+                    logger.debug(f"JA: {ja_candidates}")
 
                 ja_comb_candidates = self.fingerprinting.get_ja_comb_candidates(
                     row, db, ja_candidates
@@ -102,7 +110,7 @@ class JA_Context(PatternMatchingMethod):
                     logger.warn("Empty JA_comb candidates")
                     self.empty_ja_comb += 1
                 else:
-                    logger.debug(f"JA_comb candidates: {ja_comb_candidates}")
+                    logger.debug(f"JA COMB: {ja_comb_candidates}")
 
                 db_for_ja = self._filter_frequent_patterns(db, ja_candidates)
                 db_for_ja_comb = self._filter_frequent_patterns(db, ja_comb_candidates)
@@ -111,14 +119,14 @@ class JA_Context(PatternMatchingMethod):
                     db_for_ja, db, window, is_comb=False
                 )
                 logger.debug(
-                    f"JA context candidates: {[app for (app, score) in ja_context_candidates]}"
+                    f"CONTEXT (JA) : {[app for (app, score) in ja_context_candidates]}"
                 )
 
                 ja_comb_context_candidates = self._find_context_candidates(
                     db_for_ja_comb, db, window, is_comb=True
                 )
                 logger.debug(
-                    f"JA_comb context candidates: {[app for (app, score) in ja_comb_context_candidates]}\n"
+                    f"CONTEXT (JA COMB): {[app for (app, score) in ja_comb_context_candidates]}\n"
                 )
 
                 self._update_statistics(real_app, ja_context_candidates, is_comb=False)
@@ -156,14 +164,12 @@ class JA_Context(PatternMatchingMethod):
                 return self._use_pure_context(
                     db.frequent_patterns, db_subset, window, is_comb
                 )
-            else:
-                logger.debug(f"Candidates: {candidates}")
             return candidates
 
     def _use_pure_context(self, patterns, db_subset, window, is_comb):
         with Logger() as logger:
             logger.info(
-                f"Failed finding similarity with subset db. Using pure context.{'[comb]' if is_comb else ''}"
+                f"Failed finding similarity with subset db. Using pure context with complement of db.{'[comb]' if is_comb else ''}"
             )
             logger.debug(f"Database subset: {db_subset.keys()}")
             db_complement = {
@@ -175,4 +181,6 @@ class JA_Context(PatternMatchingMethod):
                 self.pure_context_comb += 1
             else:
                 self.pure_context += 1
+            if not candidates:
+                candidates = self.context.find_similarity(patterns, window)
         return candidates

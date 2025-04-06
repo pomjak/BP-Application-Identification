@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 05/04/2025
+Updated: 06/04/2025
 """
 
 from database import Database
@@ -191,9 +191,9 @@ class PatternMatchingMethod:
         avg_len = sum(len_of_candidates) / len(len_of_candidates)
         median_len = np.median(len_of_candidates)
         modus_len = max(set(len_of_candidates), key=len_of_candidates.count)
-        print(f"Average len of candidates: {avg_len}")
-        print(f"Median len of candidates: {median_len}")
-        print(f"Modus len of candidates: {modus_len}")
+        print(f"Average len of candidates: {round(avg_len, 4)}")
+        print(f"Median len of candidates: {round(median_len, 4)}")
+        print(f"Modus len of candidates: {round(modus_len, 4)}")
         print(f"Max len of candidates: {max(len_of_candidates)}")
         print(f"Min len of candidates: {min(len_of_candidates)}\n")
 
@@ -245,9 +245,9 @@ class Apriori(PatternMatchingMethod):
         patterns = patterns.drop_duplicates(subset="itemsets")
 
         # Remove patterns with only one item.
-        # patterns.drop(
-        #     patterns[patterns["itemsets"].apply(len) == 1].index, inplace=True
-        # )
+        patterns.drop(
+            patterns[patterns["itemsets"].apply(len) == 1].index, inplace=True
+        )
         # Sort by support
         patterns.sort_values(by=["support"], ascending=False, inplace=True)
         # Select only the top 10 patterns
