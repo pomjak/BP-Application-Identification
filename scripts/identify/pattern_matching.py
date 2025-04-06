@@ -390,9 +390,9 @@ class Apriori(PatternMatchingMethod):
             for _, row in patterns.iterrows():
                 pattern_set = frozenset(row["itemsets"])
 
-                overlap = self._overlap_similarity(tls_set, pattern_set) + 1
+                overlap = self._overlap_similarity(tls_set, pattern_set)
                 bonus_score = 50 if pattern_set.issubset(tls_set) else 1
-                total_score += overlap * (row["normalized_support"] + 1) * bonus_score
+                total_score += overlap * (row["normalized_support"]) * bonus_score
 
             if total_score > 0:
                 top_scores[app] = total_score

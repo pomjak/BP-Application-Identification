@@ -5,7 +5,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 04/04/2025
+Updated: 06/04/2025
 """
 
 import constants as col_names
@@ -63,7 +63,7 @@ class Database:
                     col_names.ORG,
                     # col_names.TLS_VERSION,
                     # col_names.CIPHER_SUITE,
-                    col_names.CLIENT_EXT,
+                    # col_names.CLIENT_EXT,
                     # col_names.CLIENT_SUPPORTED_GROUPS,
                     # col_names.CLIENT_SUPPORTED_VERSIONS,
                     # col_names.EC_FMT,
@@ -84,11 +84,9 @@ class Database:
             single_occurrence = 0
             for _, group in groups:
                 if len(group) > 1:
-
                     train_group, test_group = train_test_split(
                         group, test_size=0.25, shuffle=False
                     )
-                    # FIXME do not append to list, just group them
                     train_list.append(train_group)
                     test_list.append(test_group)
 

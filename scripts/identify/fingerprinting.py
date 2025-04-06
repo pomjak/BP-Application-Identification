@@ -73,9 +73,9 @@ class FingerprintingMethod:
         avg_len = sum(len_cand_comb) / len(len_cand_comb)
         median_len = np.median(len_cand_comb)
         modus_len = max(set(len_cand_comb), key=len_cand_comb.count)
-        print(f"Average len of candidates: {round(avg_len,4)}")
-        print(f"Median len of candidates: {round(median_len,4)}")
-        print(f"Modus len of candidates: {round(modus_len,4)}")
+        print(f"Average len of candidates: {round(avg_len, 4)}")
+        print(f"Median len of candidates: {round(median_len, 4)}")
+        print(f"Modus len of candidates: {round(modus_len, 4)}")
         print(f"Max len of candidates: {max(len_cand_comb)}")
         print(f"Min len of candidates: {min(len_cand_comb)}\n")
 

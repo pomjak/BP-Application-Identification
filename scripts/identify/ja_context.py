@@ -151,6 +151,7 @@ class JA_Context(PatternMatchingMethod):
                 db_for_ja, db, window, is_comb=False
             )
             logger.debug(f"CONTEXT (JA) : {[app for (app, score) in ja_context]}")
+            self._update_statistics(real_app, ja_context, is_comb=False)
 
             ja_comb_context = self._find_context_candidates(
                 db_for_ja_comb, db, window, is_comb=True
@@ -158,8 +159,6 @@ class JA_Context(PatternMatchingMethod):
             logger.debug(
                 f"CONTEXT (JA COMB): {[app for (app, score) in ja_comb_context]}\n"
             )
-
-            self._update_statistics(real_app, ja_context, is_comb=False)
             self._update_statistics(real_app, ja_comb_context, is_comb=True)
 
     def _filter_frequent_patterns(self, db, candidates):
