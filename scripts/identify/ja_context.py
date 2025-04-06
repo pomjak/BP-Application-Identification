@@ -85,26 +85,29 @@ class JA_Context(PatternMatchingMethod):
         test_df = db.get_test_df()
         return self.shuffle_df(test_df)
 
-    def _process_window(self, index: int, test_df, db: Database):
+    def _slide_window(self, index: int, test_df):
+        window_size = self.sliding_window_size
+        half_window = window_size // 2
+        num_test_launches = len(test_df)
+
+        window_start = np.clip(index - half_window, 0, num_test_launches - window_size)
+        row_index_within_window = index - window_start
+
+        window = test_df.iloc[window_start : window_start + window_size]
+        row = window.iloc[row_index_within_window]
+
         with Logger() as logger:
-            window_size = self.sliding_window_size
-            half_window = window_size // 2
-            num_test_launches = len(test_df)
-
-            window_start = np.clip(
-                index - half_window, 0, num_test_launches - window_size
-            )
-            row_index_within_window = index - window_start
-
-            window = test_df.iloc[window_start : window_start + window_size]
-            row = window.iloc[row_index_within_window]
-            real_app = row[Constants.APP_NAME]
-
             logger.debug(
                 f"Window position: start={window_start}, end={window_start + window_size - 1}"
             )
             logger.debug(f"Row index within window: {row_index_within_window}")
-            logger.debug(f"Real app: {real_app}")
+            logger.debug(f"Real app: {row[Constants.APP_NAME]}")
+
+        return window, row
+
+    def _process_window(self, index: int, test_df, db: Database):
+        window, row = self._slide_window(index, test_df)
+        real_app = row[Constants.APP_NAME]
 
         self._log_apps_in_window(window)
 
