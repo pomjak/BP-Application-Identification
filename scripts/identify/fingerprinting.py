@@ -4,7 +4,7 @@ Description: This file contains methods for identification of applications using
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 03/04/2025
+Updated: 06/04/2025
 """
 
 from constants import get_keys, APP_NAME
@@ -55,9 +55,9 @@ class FingerprintingMethod:
         avg_len = sum(len_cand) / len(len_cand)
         median_len = np.median(len_cand)
         modus_len = max(set(len_cand), key=len_cand.count)
-        print(f"Average len of candidates: {avg_len}")
-        print(f"Median len of candidates: {median_len}")
-        print(f"Modus len of candidates: {modus_len}")
+        print(f"Average len of candidates: {round(avg_len, 4)}")
+        print(f"Median len of candidates: {round(median_len, 4)}")
+        print(f"Modus len of candidates: {round(modus_len, 4)}")
         print(f"Max len of candidates: {max(len_cand)}")
         print(f"Min len of candidates: {min(len_cand)}\n")
 
@@ -73,9 +73,9 @@ class FingerprintingMethod:
         avg_len = sum(len_cand_comb) / len(len_cand_comb)
         median_len = np.median(len_cand_comb)
         modus_len = max(set(len_cand_comb), key=len_cand_comb.count)
-        print(f"Average len of candidates: {avg_len}")
-        print(f"Median len of candidates: {median_len}")
-        print(f"Modus len of candidates: {modus_len}")
+        print(f"Average len of candidates: {round(avg_len,4)}")
+        print(f"Median len of candidates: {round(median_len,4)}")
+        print(f"Modus len of candidates: {round(modus_len,4)}")
         print(f"Max len of candidates: {max(len_cand_comb)}")
         print(f"Min len of candidates: {min(len_cand_comb)}\n")
 
