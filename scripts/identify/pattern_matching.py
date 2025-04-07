@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 03/04/2025
+Updated: 06/04/2025
 """
 
 from database import Database
@@ -21,19 +21,16 @@ import constants as col_names
 
 
 class PatternMatchingMethod:
-    def __init__(self, min_sup, version):
+    def __init__(self, min_sup, version, max_candidates_size):
         self.min_support = min_sup
-        self.correct = 0
-        self.incorrect = 0
-        self.first_guess = 0
-        self.second_guess = 0
-        self.third_guess = 0
+        self.ja_version = version
+        self.candidate_size = max_candidates_size
 
-        self.comb_correct = 0
+        self.correct = [0] * self.candidate_size
+        self.incorrect = 0
+
+        self.comb_correct = [0] * self.candidate_size
         self.comb_incorrect = 0
-        self.comb_first_guess = 0
-        self.comb_second_guess = 0
-        self.comb_third_guess = 0
 
         self.empty_candidates = 0
         self.empty_comb_candidates = 0
@@ -48,7 +45,8 @@ class PatternMatchingMethod:
         self.empty_ja = 0
         self.empty_ja_comb = 0
 
-        self.ja_version = version
+        self.context_using_whole_db = 0
+        self.context_using_whole_db_comb = 0
 
     def _update_statistics(self, real_app, top_similarities, is_comb=False):
         if top_similarities:
@@ -61,8 +59,11 @@ class PatternMatchingMethod:
             self._log_no_similar_apps_found(real_app)
 
     def _check_top_guesses(self, real_app, top_similarities, is_comb=False):
-        # If real app is 1st, 2nd or 3rd guess, update the statistics, else increment incorrect.
-        for rank, (app, _) in enumerate(top_similarities[:3], start=1):
+        # If real app is 1st to candidate_size guess, update the statistics,
+        # else increment incorrect.
+        for rank, (app, _) in enumerate(
+            top_similarities[: self.candidate_size], start=1
+        ):
             if real_app == app:
                 self._update_correct_guess(rank, app, is_comb)
                 break
@@ -80,24 +81,14 @@ class PatternMatchingMethod:
     def _update_correct_guess(self, guess_rank, app, is_comb=False):
         # Update stats based on which guess was correct.
         if is_comb:
-            attr_map = {
-                1: "comb_first_guess",
-                2: "comb_second_guess",
-                3: "comb_third_guess",
-            }
-            correct_attr = "comb_correct"
+            if not self.comb_correct[guess_rank - 1]:
+                self.comb_correct[guess_rank - 1] = 0
+            self.comb_correct[guess_rank - 1] += 1
+
         else:
-            attr_map = {
-                1: "first_guess",
-                2: "second_guess",
-                3: "third_guess",
-            }
-            correct_attr = "correct"
-
-        if guess_rank in attr_map:
-            setattr(self, attr_map[guess_rank], getattr(self, attr_map[guess_rank]) + 1)
-
-        setattr(self, correct_attr, getattr(self, correct_attr) + 1)
+            if not self.correct[guess_rank - 1]:
+                self.correct[guess_rank - 1] = 0
+            self.correct[guess_rank - 1] += 1
 
     def _log_no_similar_apps_found(self, real_app):
         with Logger() as logger:
@@ -152,16 +143,12 @@ class PatternMatchingMethod:
             else f"Apriori with JA{ja_version}:"
         )
 
-        correct = self.comb_correct if is_comb else self.correct
+        correct = sum(self.comb_correct) if is_comb else sum(self.correct)
         incorrect = self.comb_incorrect if is_comb else self.incorrect
 
         empty_candidates = (
             self.empty_comb_candidates if is_comb else self.empty_candidates
         )
-
-        first_guess = self.comb_first_guess if is_comb else self.first_guess
-        second_guess = self.comb_second_guess if is_comb else self.second_guess
-        third_guess = self.comb_third_guess if is_comb else self.third_guess
 
         len_of_candidates = (
             self.comb_len_of_candidates if is_comb else self.len_of_candidates
@@ -171,31 +158,42 @@ class PatternMatchingMethod:
 
         empty_ja = self.empty_ja_comb if is_comb else self.empty_ja
 
+        context_using_whole_db = (
+            self.context_using_whole_db_comb if is_comb else self.context_using_whole_db
+        )
+
         total = self.number_of_tls
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
         print(f"Empty candidates: {empty_candidates}")
         print(f"Total: {total}\n")
 
-        print(f"First guess: {first_guess} ({round(first_guess / correct, 2)})")
-        print(f"Second guess: {second_guess} ({round(second_guess / correct, 2)})")
-        print(f"Third guess: {third_guess} ({round(third_guess / correct, 2)})\n")
-
-        print(f"Accuracy 1st guess : {round(first_guess / total, 4)}")
-        print(f"Accuracy 2nd guess : {round(second_guess / total, 4)}")
-        print(f"Accuracy 3rd guess : {round(third_guess / total, 4)}")
         print(f"Accuracy overall: {round(correct / total, 4)}")
         print(f"Error rate: {round(incorrect / total, 4)}\n")
 
+        for i in range(self.candidate_size):
+            (
+                print(
+                    f"{i + 1}. guess: {self.correct[i]} ({round(self.correct[i] / total, 2)})"
+                )
+                if not is_comb
+                else print(
+                    f"{i + 1}. guess: {self.comb_correct[i]} ({round(self.comb_correct[i] / total, 2)})"
+                )
+            )
+
         print(f"Empty JA candidates: {empty_ja} ({round(empty_ja / total, 2)})")
-        print(f"Pure context: {pure_context} ({round(pure_context / total, 2)})\n")
+        print(f"Pure context: {pure_context} ({round(pure_context / total, 2)})")
+        print(
+            f"Context using whole db: {context_using_whole_db} ({round(context_using_whole_db / total, 2)})\n"
+        )
 
         avg_len = sum(len_of_candidates) / len(len_of_candidates)
         median_len = np.median(len_of_candidates)
         modus_len = max(set(len_of_candidates), key=len_of_candidates.count)
-        print(f"Average len of candidates: {avg_len}")
-        print(f"Median len of candidates: {median_len}")
-        print(f"Modus len of candidates: {modus_len}")
+        print(f"Average len of candidates: {round(avg_len, 4)}")
+        print(f"Median len of candidates: {round(median_len, 4)}")
+        print(f"Modus len of candidates: {round(modus_len, 4)}")
         print(f"Max len of candidates: {max(len_of_candidates)}")
         print(f"Min len of candidates: {min(len_of_candidates)}\n")
 
@@ -223,7 +221,6 @@ class Apriori(PatternMatchingMethod):
             for _, multiple_launches_of_one_app in tls_entries_of_apps:
                 self._train_group(multiple_launches_of_one_app, db)
             self.log_patterns(db)
-            # exit(0)
 
     def log_patterns(self, db):
         with Logger() as logger:
@@ -242,13 +239,20 @@ class Apriori(PatternMatchingMethod):
 
     def _add_patterns_to_db(self, app, patterns, db):
         """
-        Add only UNIQUE frequent patterns to DB with support normalized to percentile rank.
+        Add only UNIQUE frequent patterns to DB with normalized support.
         """
-        patterns = patterns.drop_duplicates(subset="itemsets")  # Remove duplicates
+        # Remove duplicates
+        patterns = patterns.drop_duplicates(subset="itemsets")
 
-        # median = patterns["support"].median()
-        # patterns = patterns.drop(patterns[patterns["support"] < median].index)
-        # patterns = patterns.reset_index(drop=True)
+        # Remove patterns with only one item.
+        patterns.drop(
+            patterns[patterns["itemsets"].apply(len) == 1].index, inplace=True
+        )
+        # Sort by support
+        patterns.sort_values(by=["support"], ascending=False, inplace=True)
+        # Select only the top 10 patterns
+        patterns = patterns.head(10)
+        patterns = patterns.reset_index(drop=True)
 
         db.frequent_patterns[app] = pd.DataFrame(patterns)
         db.frequent_patterns[app] = self._normalize_support(db.frequent_patterns[app])
@@ -348,23 +352,15 @@ class Apriori(PatternMatchingMethod):
                 # Update statistics based on the results.
                 self._update_statistics(real_app, top_guesses)
 
-    def _debug_identify_print(self, real_app, top_guesses, warn=False):
+    def _debug_identify_print(self, real_app, top_guesses):
         if col_names.DEBUG_ENABLED:
             print(f"\033[1m{real_app}\033[0m:", end=" ")
-            if warn:
-                for app, similarity in top_guesses:
-                    if real_app == app:
-                        print(f"\033[1;32m{app} {similarity:.2f}\033[0m", end="; ")
-                    else:
-                        print(f"\033[1;33m{app} {similarity:.2f}\033[0m", end="; ")
-                print()
-            else:
-                for app, similarity in top_guesses:
-                    if real_app == app:
-                        print(f"\033[1;32m{app} {similarity:.2f}\033[0m", end="; ")
-                    else:
-                        print(f"{app} {similarity:.2f}", end="; ")
-                print()
+            for app, similarity in top_guesses:
+                if real_app == app:
+                    print(f"\033[1;32m{app} {similarity:.2f}\033[0m", end="; ")
+                else:
+                    print(f"{app} {similarity:.2f}", end="; ")
+            print()
 
     def _minmax_normalize(self, scores):
         if not scores:
@@ -380,42 +376,31 @@ class Apriori(PatternMatchingMethod):
         return {k: (v - min_score) / (max_score - min_score) for k, v in scores.items()}
 
     def find_similarity(self, frequent_patterns, tls_group):
+        if not frequent_patterns:
+            return {}
         top_scores = {}
 
         stripped_tls = tls_group.drop(columns=[col_names.FILE, col_names.APP_NAME])
         tls_set = frozenset(stripped_tls.values.flatten())
 
-        pattern_counts = {
-            app: len(patterns) for app, patterns in frequent_patterns.items()
-        }
-
         for app, patterns in frequent_patterns.items():
             # Reset total score for each app
             total_score = 0
-            num_patterns = pattern_counts[app]
 
             for _, row in patterns.iterrows():
                 pattern_set = frozenset(row["itemsets"])
 
-                jaccard = self._jaccard_similarity(tls_set, pattern_set)
                 overlap = self._overlap_similarity(tls_set, pattern_set)
-                dice = self._dice_similarity(tls_set, pattern_set)
-
                 bonus_score = 50 if pattern_set.issubset(tls_set) else 1
+                total_score += overlap * (row["normalized_support"]) * bonus_score
 
-                combined_score = jaccard * 0.3 + overlap * 0.5 + dice * 0.2
-
-                total_score += (
-                    combined_score * (row["normalized_support"] + 1) * bonus_score
-                )
-            # Adjust score based on the number of patterns
-            adjusted_score = total_score / ((np.log1p(num_patterns) + 1) ** 2.0)
-
-            if adjusted_score > 0:
-                top_scores[app] = adjusted_score
+            if total_score > 0:
+                top_scores[app] = total_score
 
         # Normalize scores using Min-Max Scaling
         norm_scores = self._minmax_normalize(top_scores)
 
         # Return top 3 apps with highest scores
-        return heapq.nlargest(3, norm_scores.items(), key=lambda x: x[1])
+        return heapq.nlargest(
+            self.candidate_size, norm_scores.items(), key=lambda x: x[1]
+        )
