@@ -1,15 +1,14 @@
-#!/usr/bin/python3
 """
 File: database.py
 Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 06/04/2025
+Updated: 21/04/2025
 """
 
-import constants as col_names
-from logger import Logger
+import config as col_names
+from .logger import Logger
 import pandas as pd
 from sklearn.model_selection import train_test_split
 

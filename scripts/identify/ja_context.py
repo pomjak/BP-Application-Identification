@@ -1,9 +1,19 @@
-from database import Database
-import constants as Constants
-from pattern_matching import PatternMatchingMethod
+"""
+File: ja_context.py
+Description: This file contains the JA_Context class that implements the JA3/4 fingerprinting method with context-aware identification.
+Author: Pomsar Jakub
+Xlogin: xpomsa00
+Created: 15/11/2024
+Updated: 21/04/2025
+"""
+
+import config as Constants
+from .database import Database
+from .pattern_matching import PatternMatchingMethod
+from .logger import Logger
+
 import numpy as np
 import pandas as pd
-from logger import Logger
 
 
 class JA_Context(PatternMatchingMethod):

@@ -4,20 +4,21 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 06/04/2025
+Updated: 21/04/2025
 """
 
-from database import Database
+from .database import Database
+from .logger import Logger
+import config as col_names
+
 import pandas as pd
 from mlxtend.frequent_patterns import apriori
 from mlxtend.preprocessing import TransactionEncoder
-from logger import Logger
 import heapq
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-import heapq
-
-import constants as col_names
+from collections import defaultdict
+from math import log
 
 
 class PatternMatchingMethod:
@@ -47,6 +48,8 @@ class PatternMatchingMethod:
 
         self.context_using_whole_db = 0
         self.context_using_whole_db_comb = 0
+
+        self.pattern_sim = {}
 
     def _update_statistics(self, real_app, top_similarities, is_comb=False):
         if top_similarities:
@@ -93,46 +96,6 @@ class PatternMatchingMethod:
     def _log_no_similar_apps_found(self, real_app):
         with Logger() as logger:
             logger.warn(f"No similar apps found for {real_app}.")
-
-    def _mark_set_as_used(self, app, pos=1):
-        """
-        Mark set of patterns in training db as used for identifying the app correctly.
-        """
-
-        if app not in self.usage_of_patterns:
-            self.usage_of_patterns[app] = [0, 0, 0]
-        self.usage_of_patterns[app][pos - 1] += 1
-
-    def _get_usage_of_set(self, app, pos=1):
-        if app in self.usage_of_patterns:
-            return self.usage_of_patterns[app][pos - 1]
-        else:
-            return 0
-
-    def _get_number_of_unique_patterns_sets(self, trained_patterns, app=None):
-        """
-        Returns the number of unique patterns sets in the database if app is None,
-        otherwise returns the number of unique patterns sets for the given app.
-        """
-        uniq = 0
-        if app:
-            return len(trained_patterns[app])
-        else:
-            for app in trained_patterns:
-                # Db has already only distinct sets of patterns for each app.
-                uniq += len(trained_patterns[app])
-        return uniq
-
-    def _log_usage_of_every_launch(self):
-        with Logger() as logger:
-            logger.debug("Usage of patterns:")
-            count = 0
-            for app in self.usage_of_patterns:
-                count += 1
-                logger.debug(f"App: {app}")
-                logger.debug(f"Usage: {self.usage_of_patterns[app]}")
-                logger.debug(count)
-                logger.debug("\n")
 
     def display_statistics(self, is_comb=False):
         print("________________________________________________________")
@@ -244,16 +207,15 @@ class Apriori(PatternMatchingMethod):
         # Remove duplicates
         patterns = patterns.drop_duplicates(subset="itemsets")
 
-        # Remove patterns with only one item.
-        patterns.drop(
-            patterns[patterns["itemsets"].apply(len) == 1].index, inplace=True
-        )
         # Sort by support
-        patterns.sort_values(by=["support"], ascending=False, inplace=True)
-        # Select only the top 10 patterns
-        patterns = patterns.head(10)
-        patterns = patterns.reset_index(drop=True)
+        patterns.sort_values(by="support", ascending=False, inplace=True)
+        patterns = patterns[patterns["itemsets"].apply(len) >= 3].head(25)
+        # patterns2 = patterns[patterns["itemsets"].apply(len) == 2].head(2)
+        # patterns3 = patterns[patterns["itemsets"].apply(len) == 3].head(4)
+        # patterns4 = patterns[patterns["itemsets"].apply(len) == 4].head(4)
 
+        # patterns = pd.concat([patterns2, patterns3, patterns4], ignore_index=True)
+        patterns = patterns.reset_index(drop=True)
         db.frequent_patterns[app] = pd.DataFrame(patterns)
         db.frequent_patterns[app] = self._normalize_support(db.frequent_patterns[app])
         with Logger() as logger:
@@ -276,12 +238,7 @@ class Apriori(PatternMatchingMethod):
             self._add_patterns_to_db(app_name, frequent_item_sets, db)
 
     def _preprocess(self, data):
-        data = data.drop(
-            columns=[
-                col_names.FILE,
-                col_names.APP_NAME,
-            ]
-        )
+        data = data.drop(columns=[col_names.FILE, col_names.APP_NAME, col_names.ORG])
         data = data.astype(str)
         # Serialize the data.
         data_list = data.values.tolist()
@@ -379,9 +336,20 @@ class Apriori(PatternMatchingMethod):
         if not frequent_patterns:
             return {}
         top_scores = {}
-
-        stripped_tls = tls_group.drop(columns=[col_names.FILE, col_names.APP_NAME])
+        pattern_df = defaultdict(int)
+        stripped_tls = tls_group.drop(
+            columns=[
+                col_names.FILE,
+                col_names.APP_NAME,
+            ]
+        )
         tls_set = frozenset(stripped_tls.values.flatten())
+        total_apps = len(frequent_patterns)
+
+        for app, patterns in frequent_patterns.items():
+            for _, row in patterns.iterrows():
+                pattern = frozenset(row["itemsets"])
+                pattern_df[pattern] += 1
 
         for app, patterns in frequent_patterns.items():
             # Reset total score for each app
@@ -390,9 +358,20 @@ class Apriori(PatternMatchingMethod):
             for _, row in patterns.iterrows():
                 pattern_set = frozenset(row["itemsets"])
 
-                overlap = self._overlap_similarity(tls_set, pattern_set)
-                bonus_score = 50 if pattern_set.issubset(tls_set) else 1
-                total_score += overlap * (row["normalized_support"]) * bonus_score
+                if not pattern_set:
+                    continue
+
+                df = pattern_df[pattern_set]
+                idf = log(1 + total_apps / df)
+
+                total_score += (
+                    self._jaccard_similarity(pattern_set, tls_set) + 1
+                ) * idf
+
+                if pattern_set.issubset(tls_set):
+                    total_score += (
+                        len(pattern_set) * 10 * idf * (row["normalized_support"] + 1)
+                    )
 
             if total_score > 0:
                 top_scores[app] = total_score
