@@ -7,9 +7,9 @@ Created: 15/11/2024
 Updated: 21/04/2025
 
 CITATIONS OF SOURCES:
-[1] MARK. A Beginner’s Guide to Apriori .... [Online]. Best Tech Blog For Programming ...
-    Dostupné z: https://programmerblog.net/a-beginners-guide-to-apriori-algorithm-in-python/.
-    [cit. 2025-04-21].
+[1] CHOUDHARY G. A Beginner’s Guide to Apriori .... [Online]. Best Tech Blog For Programming .., 2. září 2023.
+    Revidováno 8.10.2023. Dostupné z: https://programmerblog.net/a-beginners-guide-to-apriori-algorithm-in-python/.
+    [cit. 2025-04-21].Path: Home; Python; A Beginner’s Guide to Apriori Algorithm in Python.
 """
 
 from .database import Database
