@@ -49,7 +49,7 @@ class JA_Context(PatternMatchingMethod):
             app: list(group[Constants.FILE].unique()) for app, group in grouped_by_app
         }
 
-        # Distribute files while ensuring no adjacent app duplicates
+        # Distribute files while ensuring no adjacent app duplicates.
         shuffled_filenames = []
         while any(lookup.values()):  # While there are still files left
             for app in lookup:  # Iterate through apps in a fixed order
@@ -99,10 +99,10 @@ class JA_Context(PatternMatchingMethod):
         window_size = self.sliding_window_size
         half_window = window_size // 2
         num_test_launches = len(test_df)
-
+        # Ensure the window is centered around the current index.
         window_start = np.clip(index - half_window, 0, num_test_launches - window_size)
         row_index_within_window = index - window_start
-
+        # Ensure the row index is within the bounds of the window.
         window = test_df.iloc[window_start : window_start + window_size]
         row = window.iloc[row_index_within_window]
 
@@ -139,6 +139,7 @@ class JA_Context(PatternMatchingMethod):
             return candidates
 
     def _get_ja_comb_candidates(self, row, db, ja_candidates):
+        # Wrapper for the fingerprinting get_ja_comb_candidates method
         with Logger() as logger:
             candidates = self.fingerprinting.get_ja_comb_candidates(
                 row, db, ja_candidates
@@ -182,9 +183,20 @@ class JA_Context(PatternMatchingMethod):
         }
 
     def _find_context_candidates(self, db_subset, db, window, is_comb):
+        """finds candidates using context
+
+        Args:
+            db_subset (dict): Subset of the database to search for candidates.
+            db (dict): Database containing the frequent patterns.
+            window (df): Sliding window of data to analyze.
+            is_comb (bool): Flag indicating if the context is for a combination of fingerprints.
+
+        Returns:
+            list: of top N candidates found using patterns and shortened database.
+        """
         with Logger() as logger:
             if not db_subset:
-                self._log_empty_subset_and_increment_counter(logger, is_comb)
+                self._log_empty_subset(logger, is_comb)
                 return self.context.find_similarity(db.frequent_patterns, window)
 
             candidates = self.context.find_similarity(db_subset, window)
@@ -197,7 +209,7 @@ class JA_Context(PatternMatchingMethod):
 
             return candidates
 
-    def _log_empty_subset_and_increment_counter(self, logger, is_comb):
+    def _log_empty_subset(self, logger, is_comb):
         context_label = "[comb]" if is_comb else ""
         logger.info(
             f"Subset of DB is empty, using whole database for context. {context_label}"

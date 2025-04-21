@@ -5,6 +5,11 @@ Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
 Updated: 21/04/2025
+
+CITATIONS OF SOURCES:
+[1] MARK. A Beginner’s Guide to Apriori .... [Online]. Best Tech Blog For Programming ...
+    Dostupné z: https://programmerblog.net/a-beginners-guide-to-apriori-algorithm-in-python/.
+    [cit. 2025-04-21].
 """
 
 from .database import Database
@@ -84,13 +89,8 @@ class PatternMatchingMethod:
     def _update_correct_guess(self, guess_rank, app, is_comb=False):
         # Update stats based on which guess was correct.
         if is_comb:
-            if not self.comb_correct[guess_rank - 1]:
-                self.comb_correct[guess_rank - 1] = 0
             self.comb_correct[guess_rank - 1] += 1
-
         else:
-            if not self.correct[guess_rank - 1]:
-                self.correct[guess_rank - 1] = 0
             self.correct[guess_rank - 1] += 1
 
     def _log_no_similar_apps_found(self, real_app):
@@ -242,6 +242,8 @@ class Apriori(PatternMatchingMethod):
         data = data.astype(str)
         # Serialize the data.
         data_list = data.values.tolist()
+
+        ###! The following code is based on [1] (see full citation at the top of the file) !###
 
         # Transform into one-hot encoding.
         te = TransactionEncoder()

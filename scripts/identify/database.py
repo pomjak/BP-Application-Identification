@@ -9,6 +9,7 @@ Updated: 21/04/2025
 
 import config as col_names
 from .logger import Logger
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -78,11 +79,12 @@ class Database:
         with Logger() as logger:
             train_list = []
             test_list = []
-
+            # Group dataset by file
             groups = self.df.groupby(col_names.FILE)
             single_occurrence = 0
             for _, group in groups:
                 if len(group) > 1:
+                    # If group has more than one row, split it into train and test df.
                     train_group, test_group = train_test_split(
                         group, test_size=0.25, shuffle=False
                     )
@@ -94,10 +96,10 @@ class Database:
                     logger.warn(
                         f"File: {group[col_names.FILE].values[0]} has only one row. Occurrence: {single_occurrence}"
                     )
+                    # Single occurrences append to the training dataset.
                     train_list.append(group)
 
             self.train_df = pd.concat(train_list)
-            self.train_df.drop_duplicates(inplace=True)
             self.test_df = pd.concat(test_list)
 
             logger.info(f"training dataset: {len(self.train_df)}")
