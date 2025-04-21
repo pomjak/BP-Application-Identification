@@ -1,5 +1,5 @@
 """
-File: identify.py
+File: main.py
 Description: Main file for identification of applications using JA3/4 fingerprinting and frequent pattern matching algorithms.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
@@ -7,12 +7,12 @@ Created: 15/11/2024
 Updated: 03/04/2025
 """
 
-from logger import Logger
-from config import Config
-from database import Database
-from fingerprinting import FingerprintingMethod
-from pattern_matching import Apriori
-from ja_context import JA_Context
+from identify.command_line_parser import CommandLineParser
+from identify.logger import Logger
+from identify.database import Database
+from identify.fingerprinting import FingerprintingMethod
+from identify.pattern_matching import Apriori
+from identify.ja_context import JA_Context
 import time
 
 
@@ -20,7 +20,7 @@ def main():
     with Logger() as logger:
         logger.info("[START]")
 
-        config = Config()
+        config = CommandLineParser()
         db = Database(config.dataset)
 
         fingerprinting = FingerprintingMethod(config.ja_version)

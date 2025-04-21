@@ -4,19 +4,20 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 19/04/2025
+Updated: 21/04/2025
 """
 
-from database import Database
+from .database import Database
+from .logger import Logger
+import config as col_names
+
 import pandas as pd
 from mlxtend.frequent_patterns import apriori
 from mlxtend.preprocessing import TransactionEncoder
-from logger import Logger
 import heapq
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from collections import defaultdict
-import constants as col_names
 from math import log
 
 

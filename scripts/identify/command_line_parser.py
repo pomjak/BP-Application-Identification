@@ -1,5 +1,5 @@
 """
-File: config.py
+File: command_line_parser.py
 Description: This file contains the config class which parses and stores command-line arguments.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
@@ -8,10 +8,10 @@ Updated: 04/04/2025
 """
 
 import argparse
-from logger import Logger
+from .logger import Logger
 
 
-class Config:
+class CommandLineParser:
     def __init__(self):
         with Logger() as logger:
             logger.info("Parsing command-line arguments...")

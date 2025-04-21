@@ -4,12 +4,12 @@ Description: This file contains Logger class for creating log information.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 08/03/2025
+Updated: 21/04/2025
 """
 
 import inspect
 from datetime import datetime
-from constants import DEBUG_ENABLED
+from config import DEBUG_ENABLED
 import os
 
 

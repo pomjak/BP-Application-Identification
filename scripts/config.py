@@ -1,6 +1,6 @@
 """
-File: constants.py
-Description: This file contains constants representing column names in the dataset.
+File: config.py
+Description: This file contains constants representing column names in the dataset and other constants.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 17/11/2024

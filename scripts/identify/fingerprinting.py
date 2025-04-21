@@ -1,15 +1,15 @@
 """
-File: config.py
-Description: This file contains methods for identification of applications using ja/4 fingerprinting.
+File: fingerpinting.py
+Description: This file contains methods for identification of applications using ja3/4 fingerprinting.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 06/04/2025
+Updated: 21/04/2025
 """
 
-from constants import get_keys, APP_NAME
-from database import Database
-from logger import Logger
+from config import get_keys, APP_NAME
+from .database import Database
+from .logger import Logger
 import numpy as np
 
 
