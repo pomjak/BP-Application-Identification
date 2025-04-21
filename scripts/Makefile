@@ -27,13 +27,17 @@ exp1:
 	@echo "Running experiment 1..."
 	@mkdir -p $(OUT_FOLDER)
 	$(VENV_PYTHON) $(PROGRAM) -d data/iscx.csv -w 25 -m 0.01 -c 4 > $(OUT_FOLDER)/exp1.out
-	@echo "Experiment 1 completed. Output saved to exp1.out\n"
+	@mv identify.log $(OUT_FOLDER)/exp1.log
+	@echo "Experiment 1 completed. Output saved to exp1.out"
+	@echo
 
 exp2: 
 	@echo "Running experiment 2..."
 	@mkdir -p $(OUT_FOLDER)
 	$(VENV_PYTHON) $(PROGRAM) -d data/iscx.csv -w 25 -m 0.1 -c 4 > $(OUT_FOLDER)/exp2.out
-	@echo "Experiment 2 completed. Output saved to exp2.out\n"
+	@mv identify.log $(OUT_FOLDER)/exp2.log
+	@echo "Experiment 2 completed. Output saved to exp2.out"
+	@echo
 
 env:
 	@test -d $(VENV_DIR) || (echo "Creating virtual environment..." && python3 -m venv $(VENV_DIR))
