@@ -8,9 +8,9 @@
 # Path to the virtual environment directory
 VENV_DIR = .env
 # Path to the Python executable in the virtual environment
-PYTHON = $(VENV_DIR)/bin/python
+VENV_PYTHON = $(VENV_DIR)/bin/python
 # Path to the pip executable in the virtual environment
-PIP = $(VENV_DIR)/bin/pip
+VENV_PIP = $(VENV_DIR)/bin/pip
 # Path to the requirements file
 REQS_FILE = requirements.txt
 # Path to the outputs directory
@@ -20,20 +20,27 @@ PROGRAM = main.py
 
 .PHONY: install env experiments clean clean-all reqs help
 
-experiments: exp1 exp2
+experiments: install exp1 exp2
 	@echo "All experiments completed. Check the output files in $(OUT_FOLDER)."
 
 exp1:
 	@echo "Running experiment 1..."
 	@mkdir -p $(OUT_FOLDER)
-	$(PYTHON) $(PROGRAM) -d data/iscx.csv -w 25 -m 0.01 -c 4 > $(OUT_FOLDER)/exp1.out
-	@echo "Experiment 1 completed. Output saved to exp1.out"
+	$(VENV_PYTHON) $(PROGRAM) -d data/iscx.csv -w 25 -m 0.01 -c 4 > $(OUT_FOLDER)/exp1.out
+	@echo "Experiment 1 completed. Output saved to exp1.out\n"
 
 exp2: 
 	@echo "Running experiment 2..."
 	@mkdir -p $(OUT_FOLDER)
-	$(PYTHON) $(PROGRAM) -d data/iscx.csv -w 25 -m 0.1 -c 4 > $(OUT_FOLDER)/exp2.out
-	@echo "Experiment 2 completed. Output saved to exp2.out"
+	$(VENV_PYTHON) $(PROGRAM) -d data/iscx.csv -w 25 -m 0.1 -c 4 > $(OUT_FOLDER)/exp2.out
+	@echo "Experiment 2 completed. Output saved to exp2.out\n"
+
+env:
+	@test -d $(VENV_DIR) || (echo "Creating virtual environment..." && python3 -m venv $(VENV_DIR))
+
+install: env requirements.txt
+	@echo "Installing dependencies..."
+	$(VENV_PIP) install -r $(REQS_FILE)  
 
 clean:
 	@echo "Cleaning up..."
@@ -52,5 +59,8 @@ help:
 	@echo "  install     - Install dependencies from $(REQS_FILE)"
 	@echo "  run         - Run the $(PROGRAM) script"
 	@echo "  reqs        - Update $(REQS_FILE) with current dependencies"
-	@echo "  experiments - Run experiments"
+	@echo "  experiments - Run all experiments"
+	@echo "  expN        - Run experiment N"
+	@echo "  env         - Create a virtual environment"
+	@echo "  clean-all   - Clean all temporary files and logs, including the virtual environment"
 	@echo "  clean       - Clean temporary files and logs"
