@@ -5,7 +5,7 @@ Description:    Simple script to aggregate and analyze data from a CSV file.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 01/11/2024
-Updated: 22/04/2025
+Updated: 23/04/2025
 """
 
 import pandas as pd
@@ -60,7 +60,10 @@ def process_file_to_latex(file_path, max_unique_values=10, output_file="table.te
         ].count()  # Total count for the column (non-NaN values)
         uniqueness = (unique_count / total_count) * 100
         percentage_of_total = (column_total_count / total_count) * 100
-
+        # replace _ with \_ in column names for LaTeX compatibility
+        col = col.replace("_", "\\_")
+        # replace spaces with \_ in column names for LaTeX compatibility
+        col = col.replace(" ", "\\_")
         summary_data.append(
             {
                 "Column": col,
