@@ -4,7 +4,7 @@ Description: This file contains the JA_Context class that implements the JA3/4 f
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 21/04/2025
+Updated: 27/04/2025
 """
 
 import config as Constants
@@ -16,19 +16,13 @@ import numpy as np
 import pandas as pd
 
 
-class JA_Context(PatternMatchingMethod):
+class JA_Context:
     def __init__(
         self,
         fingerprinting,
         context,
         sliding_window_size,
-        max_candidates_size,
     ):
-        super().__init__(
-            0.15,
-            context.ja_version,
-            max_candidates_size,
-        )
 
         self.context = context
         self.fingerprinting = fingerprinting
@@ -75,7 +69,7 @@ class JA_Context(PatternMatchingMethod):
 
             test_df = self._prepare_test_data(db)
             num_test_launches = len(test_df)
-            self.number_of_tls = num_test_launches
+            self.context.number_of_tls = num_test_launches
 
             logger.info(
                 f"Sliding window size: {self.sliding_window_size}, "
@@ -133,7 +127,7 @@ class JA_Context(PatternMatchingMethod):
             candidates = self.fingerprinting.get_ja_candidates(row, db)
             if not candidates:
                 logger.warn("Empty JA candidates")
-                self.empty_ja += 1
+                self.context.empty_ja += 1
             else:
                 logger.debug(f"JA: {candidates}")
             return candidates
@@ -146,7 +140,7 @@ class JA_Context(PatternMatchingMethod):
             )
             if not candidates:
                 logger.warn("Empty JA_comb candidates")
-                self.empty_ja_comb += 1
+                self.context.empty_ja_comb += 1
             else:
                 logger.debug(f"JA COMB: {candidates}")
             return candidates
@@ -162,7 +156,7 @@ class JA_Context(PatternMatchingMethod):
                 db_for_ja, db, window, is_comb=False
             )
             logger.debug(f"CONTEXT (JA) : {[app for (app, score) in ja_context]}")
-            self._update_statistics(real_app, ja_context, is_comb=False)
+            self.context._update_statistics(real_app, ja_context, is_comb=False)
 
             ja_comb_context = self._find_context_candidates(
                 db_for_ja_comb, db, window, is_comb=True
@@ -170,7 +164,7 @@ class JA_Context(PatternMatchingMethod):
             logger.debug(
                 f"CONTEXT (JA COMB): {[app for (app, score) in ja_comb_context]}\n"
             )
-            self._update_statistics(real_app, ja_comb_context, is_comb=True)
+            self.context._update_statistics(real_app, ja_comb_context, is_comb=True)
 
     def _filter_frequent_patterns(self, db, candidates):
         if not candidates:
@@ -216,9 +210,9 @@ class JA_Context(PatternMatchingMethod):
         )
 
         if is_comb:
-            self.context_using_whole_db_comb += 1
+            self.context.context_using_whole_db_comb += 1
         else:
-            self.context_using_whole_db += 1
+            self.context.context_using_whole_db += 1
 
     def _use_pure_context(self, patterns, db_subset, window, is_comb):
         with Logger() as logger:
@@ -244,9 +238,9 @@ class JA_Context(PatternMatchingMethod):
 
     def _increment_pure_context_counter(self, is_comb):
         if is_comb:
-            self.pure_context_comb += 1
+            self.context.pure_context_comb += 1
         else:
-            self.pure_context += 1
+            self.context.pure_context += 1
 
     def _get_db_complement(self, patterns, db_subset):
         return {key: value for key, value in patterns.items() if key not in db_subset}
