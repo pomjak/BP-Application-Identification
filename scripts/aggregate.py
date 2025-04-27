@@ -5,7 +5,7 @@ Description:    Simple script to aggregate and analyze data from a CSV file.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 01/11/2024
-Updated: 23/04/2025
+Updated: 27/04/2025
 """
 
 import pandas as pd
@@ -108,5 +108,5 @@ if __name__ == "__main__":
     parser.add_argument("--latex", type=str, help="Export to LaTeX format")
 
     args = parser.parse_args()
-    process_file_to_latex(args.file_path, args.max_unique_values, args.latex)
+    process_file(args.file_path, args.max_unique_values)
     check_filename_appname_uniqueness(args.file_path)
