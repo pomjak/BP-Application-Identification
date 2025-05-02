@@ -4,12 +4,13 @@ Description: This file contains the JA_Context class that implements the JA3/4 f
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 27/04/2025
+Updated: 02/05/2025
 """
 
 import config as Constants
 from .database import Database
-from .pattern_matching import PatternMatchingMethod
+from .fingerprinting import FingerprintingMethod
+from .pattern_matching import Apriori
 from .logger import Logger
 
 import numpy as np
@@ -19,8 +20,8 @@ import pandas as pd
 class JA_Context:
     def __init__(
         self,
-        fingerprinting,
-        context,
+        fingerprinting: FingerprintingMethod,
+        context: Apriori,
         sliding_window_size,
     ):
 

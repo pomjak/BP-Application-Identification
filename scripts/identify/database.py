@@ -4,7 +4,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 21/04/2025
+Updated: 02/05/2025
 """
 
 import config as col_names
@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 
 
 class Database:
-    def __init__(self, dataset):
+    def __init__(self, dataset: str):
         self.dataset = dataset
         self.df = {}
         self.lookup_table = {}  # lookup table for fingerprinting
@@ -48,7 +48,8 @@ class Database:
         with Logger() as logger:
             # filter out rows with type A
             self.df.drop(self.df[self.df[col_names.TYPE] == "A"].index, inplace=True)
-            logger.info("TYPE A rows filtered out.")
+            self.df.drop(self.df[self.df[col_names.TYPE] == "M"].index, inplace=True)
+            logger.info("TYPE A and M rows filtered out.")
 
             # drop everything except these columns
             self.df = self.df.filter(

@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 27/04/2025
+Updated: 02/05/2025
 
 CITATIONS OF SOURCES:
 [1] CHOUDHARY G. A Beginner’s Guide to Apriori .... [Online]. Best Tech Blog For Programming .., 2. září 2023.
@@ -381,7 +381,7 @@ class Apriori(PatternMatchingMethod):
         # Normalize scores using Min-Max Scaling
         norm_scores = self._minmax_normalize(top_scores)
 
-        # Return top 3 apps with highest scores
+        # Return top N apps with highest scores
         return heapq.nlargest(
             self.candidate_size, norm_scores.items(), key=lambda x: x[1]
         )
