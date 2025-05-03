@@ -4,7 +4,7 @@ Description: This file contains Logger class for creating log information.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 21/04/2025
+Updated: 03/05/2025
 """
 
 import inspect

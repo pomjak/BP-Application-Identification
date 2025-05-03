@@ -4,7 +4,7 @@ Description: This file contains the config class which parses and stores command
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 04/04/2025
+Updated: 03/05/2025
 """
 
 import argparse
@@ -32,6 +32,9 @@ class CommandLineParser:
 
             self.max_candidates_length = args.max_candidates_length
             logger.info(f"Maximum candidates length set: {self.max_candidates_length}")
+
+            self.csv_file = args.csv
+            logger.info(f"CSV file set: {self.csv_file}")
 
     def __parse_arguments(self):
         parser = argparse.ArgumentParser(
@@ -72,6 +75,13 @@ class CommandLineParser:
             type=int,
             help="maximum length of candidate patterns",
             default=4,
+        )
+
+        parser.add_argument(
+            "--csv",
+            type=str,
+            help="path to the CSV file for storing results",
+            default="export.csv",
         )
 
         return parser.parse_args()

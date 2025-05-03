@@ -4,7 +4,7 @@ Description: Main file for identification of applications using JA3/4 fingerprin
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 02/05/2025
+Updated: 03/05/2025
 """
 
 from identify.command_line_parser import CommandLineParser
@@ -32,6 +32,7 @@ def main():
             config.min_support,
             config.ja_version,
             config.max_candidates_length,
+            csv_file=config.csv_file,
         )
         context.train(db)
 

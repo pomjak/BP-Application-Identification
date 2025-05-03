@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 02/05/2025
+Updated: 03/05/2025
 
 CITATIONS OF SOURCES:
 [1] CHOUDHARY G. A Beginner’s Guide to Apriori .... [Online]. Best Tech Blog For Programming .., 2. září 2023.
@@ -24,10 +24,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from collections import defaultdict
 from math import log
+import csv
+import os
 
 
 class PatternMatchingMethod:
-    def __init__(self, min_sup, version, max_candidates_size):
+    def __init__(self, min_sup, version, max_candidates_size, csv_file=None):
+        self.csv_file = csv_file
         self.min_support = min_sup
         self.ja_version = version
         self.candidate_size = max_candidates_size
@@ -134,16 +137,11 @@ class PatternMatchingMethod:
         print(f"Accuracy overall: {round(correct / total, 4)}")
         print(f"Error rate: {round(incorrect / total, 4)}\n")
 
+        correct_list = self.comb_correct if is_comb else self.correct
+        accuracy_list = [round((count / total), 2) for count in correct_list]
+
         for i in range(self.candidate_size):
-            (
-                print(
-                    f"{i + 1}. guess: {self.correct[i]} ({round(self.correct[i] / total, 2)})"
-                )
-                if not is_comb
-                else print(
-                    f"{i + 1}. guess: {self.comb_correct[i]} ({round(self.comb_correct[i] / total, 2)})"
-                )
-            )
+            print(f"{i + 1}. guess: {correct_list[i]} ({round(accuracy_list[i], 2)})")
 
         print(f"Empty JA candidates: {empty_ja} ({round(empty_ja / total, 2)})")
         print(f"Pure context: {pure_context} ({round(pure_context / total, 2)})")
@@ -160,14 +158,69 @@ class PatternMatchingMethod:
         print(f"Max len of candidates: {max(len_of_candidates)}")
         print(f"Min len of candidates: {min(len_of_candidates)}\n")
 
+        if self.csv_file is not None:
+            self.export_to_csv(
+                [
+                    [
+                        is_comb,
+                        ja_version,
+                        correct,
+                        incorrect,
+                        empty_candidates,
+                        total,
+                        round(correct / total, 4),
+                        round(incorrect / total, 4),
+                        avg_len,
+                        median_len,
+                        modus_len,
+                        max(len_of_candidates),
+                        min(len_of_candidates),
+                        *correct_list,
+                        *accuracy_list,
+                    ]
+                ],
+                headers=[
+                    "is_comb",
+                    "ja_version",
+                    "correct",
+                    "incorrect",
+                    "empty_candidates",
+                    "total",
+                    "accuracy_overall",
+                    "error_rate",
+                    "avg_len_of_candidates",
+                    "median_len_of_candidates",
+                    "modus_len_of_candidates",
+                    "max_len_of_candidates",
+                    "min_len_of_candidates",
+                    *[f"guess_{i + 1}" for i in range(len(correct_list))],
+                    *[f"guess_perc_{i + 1}" for i in range(len(correct_list))],
+                ],
+            )
+
         if not is_comb:
             self.display_statistics(is_comb=True)
+
+    def export_to_csv(self, data, headers=None):
+        file_exists = os.path.exists(self.csv_file)
+        with open(self.csv_file, mode="a", newline="") as csvfile:
+            csv_writer = csv.writer(csvfile)
+            if headers and not file_exists:
+                csv_writer.writerow(headers)
+            for row in data:
+                if isinstance(row, list):  # Ensure row is a list
+                    csv_writer.writerow(row)
+                else:
+                    csv_writer.writerow([row])
 
     def identify(self, df):
         raise NotImplementedError("This method should be overridden by subclasses")
 
 
 class Apriori(PatternMatchingMethod):
+    def __str__(self):
+        return
+
     def train(self, db: Database):
         """
         Train the Apriori algorithm on dataset grouped by app for multiple launches,
@@ -178,11 +231,11 @@ class Apriori(PatternMatchingMethod):
             # Retrieve training data.
             data = db.get_train_df()
             # Group tls entries by app name
-            tls_entries_of_apps = data.groupby(col_names.APP_NAME)
+            tls_by_apps = data.groupby(col_names.APP_NAME)
 
             # Train for each app with multiple launches and look for frequent patterns over more launches
-            for _, multiple_launches_of_one_app in tls_entries_of_apps:
-                self._train_group(multiple_launches_of_one_app, db)
+            for _, one_app_tls in tls_by_apps:
+                self._train_group(one_app_tls, db)
             self.log_patterns(db)
 
     def log_patterns(self, db):
@@ -238,7 +291,11 @@ class Apriori(PatternMatchingMethod):
             self._add_patterns_to_db(app_name, frequent_item_sets, db)
 
     def _preprocess(self, data):
-        data = data.drop(columns=[col_names.FILE, col_names.APP_NAME, col_names.ORG])
+        # Strip data of unnecessary columns.
+        # Keep only columns that are needed for the Apriori algorithm.
+        data = data.filter(col_names.columns_to_keep)
+        # Remove the app name and file name columns from the data.
+        data = data.drop(columns=[col_names.FILE, col_names.APP_NAME])
         data = data.astype(str)
         # Serialize the data.
         data_list = data.values.tolist()
@@ -339,12 +396,10 @@ class Apriori(PatternMatchingMethod):
             return {}
         top_scores = {}
         pattern_df = defaultdict(int)
-        stripped_tls = tls_group.drop(
-            columns=[
-                col_names.FILE,
-                col_names.APP_NAME,
-            ]
-        )
+
+        stripped_tls = tls_group.filter(col_names.columns_to_keep)
+        stripped_tls = stripped_tls.drop(columns=[col_names.APP_NAME, col_names.FILE])
+
         tls_set = frozenset(stripped_tls.values.flatten())
         total_apps = len(frequent_patterns)
 
