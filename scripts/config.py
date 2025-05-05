@@ -40,7 +40,7 @@ columns_to_keep_in_db = [
     JA4,
     JA4_S,
     SNI,  # needed for combination
-    #! FROM HERE INSERT EVERY ATTRIBUTE USED LATER FOR CONTEXT IDENTIFICATION
+    #! FROM HERE INSERT EVERY ATTRIBUTE USED LATER FOR CONTEXT IDENTIFICATION !#
     ORG,
     # TLS_VERSION,
     # CIPHER_SUITE,
@@ -56,12 +56,12 @@ columns_to_keep_in_db = [
 ]
 
 
-#! INSERT HERE ATTRIBUTES FOR CONTEXT IDENTIFICATION
+#! INSERT HERE ATTRIBUTES FOR CONTEXT IDENTIFICATION !#
 columns_to_keep_for_context = [
-    # JA3,
-    # JA3_S,
-    JA4,
-    JA4_S,
+    JA3,
+    JA3_S,
+    # JA4,
+    # JA4_S,
     # SNI,
     # ORG,
     # TLS_VERSION,
@@ -77,9 +77,9 @@ columns_to_keep_for_context = [
     # SERVER_SUPPORTED_VERSIONS,
 ]
 
-#! EDIT LENGTH AND COUNT OF PATTERNS STORED PER ONE APP
+#! EDIT LENGTH AND COUNT OF PATTERNS STORED PER ONE APP !#
 PATTERN_FILTERS = [
-    {"operator": "==", "length": 2, "head": 10},
+    # {"operator": ">=", "length": 2 , "head": 10},
     # {"operator": "==", "length": 3, "head": 10},
     # {"operator": "==", "length": 4, "head": 10},
 ]

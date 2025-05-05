@@ -164,6 +164,7 @@ class PatternMatchingMethod:
                 [
                     [
                         is_comb,
+                        config.columns_to_keep_for_context,
                         ja_version,
                         correct,
                         incorrect,
@@ -182,6 +183,7 @@ class PatternMatchingMethod:
                 ],
                 headers=[
                     "is_comb",
+                    "items",
                     "ja_version",
                     "correct",
                     "incorrect",
@@ -205,7 +207,10 @@ class PatternMatchingMethod:
     def export_to_csv(self, data, headers=None):
         file_exists = os.path.exists(self.csv_file)
         with open(self.csv_file, mode="a", newline="") as csvfile:
-            csv_writer = csv.writer(csvfile)
+            csv_writer = csv.writer(
+                csvfile,
+                delimiter=";",
+            )
             if headers and not file_exists:
                 csv_writer.writerow(headers)
             for row in data:
@@ -287,8 +292,9 @@ class Apriori(PatternMatchingMethod):
             ].head(head)
             filtered_patterns.append(subset)
 
-        # Combine all subsets
-        patterns = pd.concat(filtered_patterns, ignore_index=True)
+        if filtered_patterns:
+            # Combine all subsets
+            patterns = pd.concat(filtered_patterns, ignore_index=True)
 
         patterns = patterns.reset_index(drop=True)
         db.frequent_patterns[app] = pd.DataFrame(patterns)
