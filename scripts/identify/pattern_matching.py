@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 03/05/2025
+Updated: 05/05/2025
 
 CITATIONS OF SOURCES:
 [1] CHOUDHARY G. A Beginner’s Guide to Apriori .... [Online]. Best Tech Blog For Programming .., 2. září 2023.
@@ -262,7 +262,7 @@ class Apriori(PatternMatchingMethod):
 
         # Sort by support
         patterns.sort_values(by="support", ascending=False, inplace=True)
-        patterns = patterns[patterns["itemsets"].apply(len) >= 3].head(25)
+        patterns = patterns[patterns["itemsets"].apply(len) >= 2].head(10)
         # patterns2 = patterns[patterns["itemsets"].apply(len) == 2].head(2)
         # patterns3 = patterns[patterns["itemsets"].apply(len) == 3].head(4)
         # patterns4 = patterns[patterns["itemsets"].apply(len) == 4].head(4)
@@ -293,9 +293,7 @@ class Apriori(PatternMatchingMethod):
     def _preprocess(self, data):
         # Strip data of unnecessary columns.
         # Keep only columns that are needed for the Apriori algorithm.
-        data = data.filter(col_names.columns_to_keep)
-        # Remove the app name and file name columns from the data.
-        data = data.drop(columns=[col_names.FILE, col_names.APP_NAME])
+        data = data.filter(col_names.columns_to_keep_for_context)
         data = data.astype(str)
         # Serialize the data.
         data_list = data.values.tolist()
@@ -306,7 +304,7 @@ class Apriori(PatternMatchingMethod):
         te = TransactionEncoder()
         te_ary = te.fit(data_list).transform(data_list)
         df = pd.DataFrame(te_ary, columns=te.columns_)
-
+        ###! ---- END ---- !####
         # Convert to boolean values to ensure that the apriori algorithm works correctly,
         # as it requires the input data to be in a binary format.
         df_encoded = df.astype(bool)
@@ -397,9 +395,8 @@ class Apriori(PatternMatchingMethod):
         top_scores = {}
         pattern_df = defaultdict(int)
 
-        stripped_tls = tls_group.filter(col_names.columns_to_keep)
-        stripped_tls = stripped_tls.drop(columns=[col_names.APP_NAME, col_names.FILE])
-
+        stripped_tls = tls_group.filter(col_names.columns_to_keep_for_context)
+        # print(stripped_tls)
         tls_set = frozenset(stripped_tls.values.flatten())
         total_apps = len(frequent_patterns)
 

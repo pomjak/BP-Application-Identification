@@ -1,10 +1,10 @@
 """
 File: config.py
-Description: This file contains constants representing column names in the dataset and other constants.
+Description: This file contains constants representing column names in the dataset, other constants and setting .
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 17/11/2024
-Updated: 03/05/2025
+Updated: 05/05/2025
 """
 
 # Modify the constants to match the dataset column names
@@ -31,16 +31,39 @@ SERVER_EXTENSIONS = "ServerExtensions"
 SERVER_SUPPORTED_VERSIONS = "ServerSupportedVersions"
 
 
-# Select which columns to use for context identification
-columns_to_keep = [
+# Select which columns  to keep in db for fingerprinting methods and identification using context
+columns_to_keep_in_db = [
     APP_NAME,  # need to be kept, excluded from identification
     FILE,  # need to be kept, excluded from identification
+    JA3,  # kept for fingerprinting, in each run is selected only one version (JA3/JA4)
+    JA3_S,
+    JA4,
+    JA4_S,
+    SNI,  # needed for combination
+    #! FROM HERE INSERT EVERY ATTRIBUTE USED LATER FOR CONTEXT IDENTIFICATION
+    ORG,
+    # TLS_VERSION,
+    # CIPHER_SUITE,
+    # CLIENT_EXT,
+    # CLIENT_SUPPORTED_GROUPS,
+    # CLIENT_SUPPORTED_VERSIONS,
+    # EC_FMT,
+    # ALPN,
+    # SIGNATURE_ALGORITHMS,
+    # SERVER_CIPHER_SUITE,
+    # SERVER_EXTENSIONS,
+    # SERVER_SUPPORTED_VERSIONS,
+]
+
+
+#! INSERT HERE ATTRIBUTES FOR CONTEXT IDENTIFICATION
+columns_to_keep_for_context = [
     # JA3,
     # JA3_S,
     JA4,
     JA4_S,
-    SNI,
-    ORG,
+    # SNI,
+    # ORG,
     # TLS_VERSION,
     # CIPHER_SUITE,
     # CLIENT_EXT,

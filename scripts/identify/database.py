@@ -4,7 +4,7 @@ Description: This file contains databases for storing fingerprints.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 03/05/2025
+Updated: 05/05/2025
 """
 
 import config as col_names
@@ -52,7 +52,7 @@ class Database:
             logger.info("TYPE A and M rows filtered out.")
 
             # drop everything except these columns
-            self.df = self.df.filter(col_names.columns_to_keep)
+            self.df = self.df.filter(col_names.columns_to_keep_in_db)
 
     def split_dataset(self):
         with Logger() as logger:
