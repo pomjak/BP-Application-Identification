@@ -8,3 +8,4 @@ env
 .vscode
 update_date.py
 *.log
+scripts/*.csv
