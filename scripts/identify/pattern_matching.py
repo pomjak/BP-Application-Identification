@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 05/05/2025
+Updated: 06/05/2025
 
 CITATIONS OF SOURCES:
 [1] CHOUDHARY G. A Beginner’s Guide to Apriori .... [Online]. Best Tech Blog For Programming .., 2. září 2023.
@@ -172,11 +172,11 @@ class PatternMatchingMethod:
                         incorrect,
                         empty_candidates,
                         total,
-                        round(correct / total, 4),
-                        round(incorrect / total, 4),
-                        round(avg_len, 4),
-                        round(median_len, 4),
-                        round(modus_len, 4),
+                        correct / total,
+                        incorrect / total,
+                        avg_len,
+                        median_len,
+                        modus_len,
                         max(len_of_candidates),
                         min(len_of_candidates),
                         *correct_list,
