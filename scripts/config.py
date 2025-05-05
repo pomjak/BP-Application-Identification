@@ -77,6 +77,14 @@ columns_to_keep_for_context = [
     # SERVER_SUPPORTED_VERSIONS,
 ]
 
+#! EDIT LENGTH AND COUNT OF PATTERNS STORED PER ONE APP
+PATTERN_FILTERS = [
+    {"operator": "==", "length": 2, "head": 10},
+    # {"operator": "==", "length": 3, "head": 10},
+    # {"operator": "==", "length": 4, "head": 10},
+]
+
+
 # DEBUG LOG LEVEL
 DEBUG_ENABLED = True
 

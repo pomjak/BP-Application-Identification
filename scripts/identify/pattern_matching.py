@@ -14,7 +14,7 @@ CITATIONS OF SOURCES:
 
 from .database import Database
 from .logger import Logger
-import config as col_names
+import config
 
 import pandas as pd
 from mlxtend.frequent_patterns import apriori
@@ -24,6 +24,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from collections import defaultdict
 from math import log
+import operator
 import csv
 import os
 
@@ -131,7 +132,7 @@ class PatternMatchingMethod:
         total = self.number_of_tls
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
-        print(f"Empty candidates: {empty_candidates}")
+        print(f"Empty context candidates: {empty_candidates}")
         print(f"Total: {total}\n")
 
         print(f"Accuracy overall: {round(correct / total, 4)}")
@@ -231,7 +232,7 @@ class Apriori(PatternMatchingMethod):
             # Retrieve training data.
             data = db.get_train_df()
             # Group tls entries by app name
-            tls_by_apps = data.groupby(col_names.APP_NAME)
+            tls_by_apps = data.groupby(config.APP_NAME)
 
             # Train for each app with multiple launches and look for frequent patterns over more launches
             for _, one_app_tls in tls_by_apps:
@@ -262,12 +263,33 @@ class Apriori(PatternMatchingMethod):
 
         # Sort by support
         patterns.sort_values(by="support", ascending=False, inplace=True)
-        patterns = patterns[patterns["itemsets"].apply(len) >= 2].head(10)
-        # patterns2 = patterns[patterns["itemsets"].apply(len) == 2].head(2)
-        # patterns3 = patterns[patterns["itemsets"].apply(len) == 3].head(4)
-        # patterns4 = patterns[patterns["itemsets"].apply(len) == 4].head(4)
 
-        # patterns = pd.concat([patterns2, patterns3, patterns4], ignore_index=True)
+        # map operator for dynamic configuration of filters
+        ops = {
+            "==": operator.eq,
+            ">=": operator.ge,
+            "<=": operator.le,
+            "<": operator.lt,
+            ">": operator.gt,
+            "!=": operator.ne,
+        }
+
+        filtered_patterns = []
+
+        # Extract filters from config
+        for f in config.PATTERN_FILTERS:
+            op = ops[f["operator"]]
+            length = f["length"]
+            head = f["head"]
+            # Filter patterns based on length and operator
+            subset = patterns[
+                patterns["itemsets"].apply(lambda x: op(len(x), length))
+            ].head(head)
+            filtered_patterns.append(subset)
+
+        # Combine all subsets
+        patterns = pd.concat(filtered_patterns, ignore_index=True)
+
         patterns = patterns.reset_index(drop=True)
         db.frequent_patterns[app] = pd.DataFrame(patterns)
         db.frequent_patterns[app] = self._normalize_support(db.frequent_patterns[app])
@@ -282,7 +304,7 @@ class Apriori(PatternMatchingMethod):
 
     def _train_group(self, group, db):
         with Logger() as logger:
-            app_name = group[col_names.APP_NAME].iloc[0]
+            app_name = group[config.APP_NAME].iloc[0]
             logger.debug(f"Training for {app_name}, with length of {len(group)}")
 
             frequent_item_sets = self._execute_apriori(group)
@@ -293,7 +315,7 @@ class Apriori(PatternMatchingMethod):
     def _preprocess(self, data):
         # Strip data of unnecessary columns.
         # Keep only columns that are needed for the Apriori algorithm.
-        data = data.filter(col_names.columns_to_keep_for_context)
+        data = data.filter(config.columns_to_keep_for_context)
         data = data.astype(str)
         # Serialize the data.
         data_list = data.values.tolist()
@@ -356,10 +378,10 @@ class Apriori(PatternMatchingMethod):
             logger.info("Identifying using Apriori algorithm ...")
             # Retrieve test data and group it by app.
             test_ds = db.get_test_df()
-            test_ds_launches = test_ds.groupby(col_names.FILE)
+            test_ds_launches = test_ds.groupby(config.FILE)
 
             for _, launch in test_ds_launches:
-                real_app = launch[col_names.APP_NAME].iloc[0]
+                real_app = launch[config.APP_NAME].iloc[0]
                 # Find similarity of tle entries in db of frequent patterns.
                 top_guesses = self.find_similarity(db.frequent_patterns, launch)
                 self._debug_identify_print(real_app, top_guesses)
@@ -367,7 +389,7 @@ class Apriori(PatternMatchingMethod):
                 self._update_statistics(real_app, top_guesses)
 
     def _debug_identify_print(self, real_app, top_guesses):
-        if col_names.DEBUG_ENABLED:
+        if config.DEBUG_ENABLED:
             print(f"\033[1m{real_app}\033[0m:", end=" ")
             for app, similarity in top_guesses:
                 if real_app == app:
@@ -395,7 +417,7 @@ class Apriori(PatternMatchingMethod):
         top_scores = {}
         pattern_df = defaultdict(int)
 
-        stripped_tls = tls_group.filter(col_names.columns_to_keep_for_context)
+        stripped_tls = tls_group.filter(config.columns_to_keep_for_context)
         # print(stripped_tls)
         tls_set = frozenset(stripped_tls.values.flatten())
         total_apps = len(frequent_patterns)
