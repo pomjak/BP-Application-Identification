@@ -1,0 +1,26 @@
+\begin{table}[H]
+    \centering
+	\begin{tabular}{lrrrrr}
+		\toprule
+        \multicolumn{6}{c}{\textbf{Zúžení databáze kandidátů pomocí JA4+JA4S+SNI}} \\
+        \midrule
+		\multirow{2}*{\textbf{Kombinace položek}}&\multicolumn{2}{c}{\texttt{iscx.csv}} & \multicolumn{3}{c}{\texttt{mobile\_desktop\_apps\_raw.csv}} \\
+		                  & \textbf{Přesnost} & \textbf{Délka} & \textbf{Přesnost} & \textbf{Délka} & \textbf{Čas[s]} \\
+		\midrule
+		JA3               & 0.869              & 1.585           & 0.385              & 2.277           & 53.660        \\
+		JA4               & 0.869              & 1.585           & 0.770              & 1.727           & 32.340        \\
+		JA3+JA4           & 0.869              & 1.585           & 0.768              & 1.726           & 48.100        \\
+		JA3+JA3S          & 0.874              & 1.585           & 0.793              & 1.714           & 46.220        \\
+		JA4+JA4S          & 0.869              & 1.585           & 0.798              & 1.714           & 58.500        \\
+		JA3+JA3S+SNI      & 0.874              & 1.585           & 0.795              & 1.714           & 66.340        \\
+		JA4+JA4S+SNI      & 0.869              & 1.585           & 0.804              & 1.714           & 84.030        \\
+		JA34S*            & 0.869              & 1.585           & 0.795              & 1.714           & 150.820       \\
+		JA34S*+SNI        & 0.869              & 1.585           & 0.797              & 1.714           & 225.220       \\
+		JA34S*+SNI+ORG    & 0.872              & 1.585           & 0.782              & 1.714           & 400.770       \\
+		JA34S*+SNI+ORG+CE & 0.872              & 1.585           & 0.774              & 1.714           & 840.660       \\
+		
+		\bottomrule
+	\end{tabular}
+	\caption{Výsledky experimentu s~kombinacemi položek při zúžení databáze kandidátů pomocí kombinace  \textit{JA4+JA4S+SNI}}
+	\label{tab:merged-comb-accuracy-ja4}
+\end{table}
