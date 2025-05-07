@@ -4,7 +4,7 @@ Description: This file contains constants representing column names in the datas
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 17/11/2024
-Updated: 06/05/2025
+Updated: 07/05/2025
 """
 
 # Modify the constants to match the dataset column names
@@ -35,16 +35,16 @@ SERVER_SUPPORTED_VERSIONS = "ServerSupportedVersions"
 columns_to_keep_in_db = [
     APP_NAME,  # need to be kept, excluded from identification
     FILE,  # need to be kept, excluded from identification
-    JA3,  # kept for fingerprinting, in each run is selected only one version (JA3/JA4)
-    JA3_S,
+    # JA3,  # kept for fingerprinting, in each run is selected only one version (JA3/JA4)
+    # JA3_S,
     JA4,
     JA4_S,
     SNI,  # needed for combination
     #! FROM HERE INSERT EVERY ATTRIBUTE USED LATER FOR CONTEXT IDENTIFICATION !#
-    ORG,
+    # ORG,
     # TLS_VERSION,
     # CIPHER_SUITE,
-    CLIENT_EXT,
+    # CLIENT_EXT,
     # CLIENT_SUPPORTED_GROUPS,
     # CLIENT_SUPPORTED_VERSIONS,
     # EC_FMT,
@@ -58,12 +58,12 @@ columns_to_keep_in_db = [
 
 #! INSERT HERE ATTRIBUTES FOR CONTEXT IDENTIFICATION !#
 columns_to_keep_for_context = [
-    JA3,
-    JA3_S,
+    # JA3,
+    # JA3_S,
     JA4,
     JA4_S,
     SNI,
-    ORG,
+    # ORG,
     # CLIENT_EXT,
     # TLS_VERSION,
     # CIPHER_SUITE,
@@ -79,9 +79,11 @@ columns_to_keep_for_context = [
 
 #! EDIT LENGTH AND COUNT OF PATTERNS STORED PER ONE APP !#
 PATTERN_FILTERS = [
-    # {"operator": ">=", "length": 3 , "head": 10},
-    # {"operator": "==", "length": 3, "head": 10},
-    # {"operator": "==", "length": 4, "head": 10},
+    {"operator": "==", "length": 1, "head": 1},
+    {"operator": "==", "length": 2, "head": 2},
+    {"operator": "==", "length": 3, "head": 2},
+    # {"operator": "==", "length": 2, "head": 5},
+    # {"operator": "==", "length": 1, "head": 5},
 ]
 
 

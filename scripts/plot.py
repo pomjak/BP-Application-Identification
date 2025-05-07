@@ -2,50 +2,60 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-df = pd.read_csv("exp1.csv", sep=";")
+# Load and filter datasets
+df_iscx = pd.read_csv("outs/ex2-iscx.csv", sep=";")
+df_mobile = pd.read_csv("outs/ex2-mobile.csv", sep=";")
+df_iscx = df_iscx[df_iscx["is_comb"]]
+df_mobile = df_mobile[df_mobile["is_comb"]]
 
-df_not_comb = df[~df["is_comb"]]
-df_comb = df[df["is_comb"]]
-
+# Plot settings
 sns.set(style="whitegrid")
-plt.figure(figsize=(10, 6))
-sns.lineplot(
-    data=df_not_comb, x="items", y="accuracy_overall", errorbar="sd", marker="o"
+plt.rcParams.update(
+    {
+        "font.size": 18,
+        "axes.titlesize": 20,
+        "axes.labelsize": 18,
+        "xtick.labelsize": 16,
+        "ytick.labelsize": 16,
+        "legend.fontsize": 14,
+        "legend.title_fontsize": 16,
+    }
 )
-plt.xticks(rotation=-90)
-plt.title("Accuracy vs Number of Items")
-plt.xlabel("Number of Items Used for Identification")
-plt.ylabel("Accuracy")
-plt.tight_layout()
-plt.savefig("../dias/accuracy_vs_items_comb.pdf")
 
-plt.figure(figsize=(10, 6))
-sns.barplot(data=df_not_comb, x="items", y="avg_len_of_candidates", errorbar="sd")
-plt.xticks(rotation=-90)
-plt.title("Candidate Set Size per Parameter")
-plt.xlabel("Number of Items")
-plt.ylabel("Average Candidate Size")
-plt.ylim(2, 2.2)
+# --------- ISCX plot ---------
+plt.figure(figsize=(6, 6))
+sns.lineplot(
+    data=df_iscx,
+    x="min_support",
+    y="avg_len_of_candidates",
+    hue="items",
+    marker="o",
+    errorbar=None,
+)
+plt.gca().invert_xaxis()
+plt.title("ISCX")
+plt.xlabel("Minimální podpora (klesající)")
+plt.ylabel("Průměrná velikost množiny")
+plt.legend(title="Kombinace položek", loc="best", frameon=True)
 plt.tight_layout()
-plt.savefig("../dias/candidate_size_comb.pdf")
+plt.savefig("../dias/ex2-candidates_len-iscx.pdf", format="pdf", bbox_inches="tight")
+plt.show()
 
-
-sns.set(style="whitegrid")
-plt.figure(figsize=(10, 6))
-sns.lineplot(data=df_comb, x="items", y="accuracy_overall", errorbar="sd", marker="o")
-plt.xticks(rotation=-90)
-plt.title("Accuracy vs Number of Items")
-plt.xlabel("Number of Items Used for Identification")
-plt.ylabel("Accuracy")
+# --------- MOBILE plot ---------
+plt.figure(figsize=(6, 6))
+sns.lineplot(
+    data=df_mobile,
+    x="min_support",
+    y="avg_len_of_candidates",
+    hue="items",
+    marker="o",
+    errorbar=None,
+)
+plt.gca().invert_xaxis()
+plt.title("Mobile")
+plt.xlabel("Minimální podpora (klesající)")
+plt.ylabel("Průměrná velikost množiny")
+plt.legend(title="Kombinace položek", loc="best", frameon=True)
 plt.tight_layout()
-plt.savefig("../dias/accuracy_vs_items.pdf")
-
-plt.figure(figsize=(10, 6))
-sns.barplot(data=df_comb, x="items", y="avg_len_of_candidates", errorbar="sd")
-plt.xticks(rotation=-90)
-plt.title("Candidate Set Size per Parameter")
-plt.xlabel("Number of Items")
-plt.ylabel("Average Candidate Size")
-plt.ylim(1.5, 1.7)
-plt.tight_layout()
-plt.savefig("../dias/candidate_size.pdf")
+plt.savefig("../dias/ex2-candidates_len-mobile.pdf", format="pdf", bbox_inches="tight")
+plt.show()
