@@ -4,7 +4,7 @@ Description: This file contains constants representing column names in the datas
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 17/11/2024
-Updated: 07/05/2025
+Updated: 08/05/2025
 """
 
 # Modify the constants to match the dataset column names
@@ -79,11 +79,9 @@ columns_to_keep_for_context = [
 
 #! EDIT LENGTH AND COUNT OF PATTERNS STORED PER ONE APP !#
 PATTERN_FILTERS = [
-    {"operator": "==", "length": 1, "head": 1},
+    {"operator": "==", "length": 1, "head": 2},
     {"operator": "==", "length": 2, "head": 2},
     {"operator": "==", "length": 3, "head": 2},
-    # {"operator": "==", "length": 2, "head": 5},
-    # {"operator": "==", "length": 1, "head": 5},
 ]
 
 

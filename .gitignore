@@ -8,3 +8,5 @@ env
 .vscode
 update_date.py
 *.log
+scripts/outs/patterns/mobile/*.csv
+scripts/outs/patterns/iscx/*.csv
