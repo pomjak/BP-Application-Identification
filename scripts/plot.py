@@ -48,5 +48,5 @@ for name, df in datasets.items():
         plt.tight_layout()
         # Save to file
         fname = f"../dias/ex3-{name.lower()}-heatmap-{label.replace(' ', '_')}.pdf"
-        # plt.savefig(fname, format="pdf", bbox_inches="tight")
+        plt.savefig(fname, format="pdf", bbox_inches="tight")
         plt.show()
