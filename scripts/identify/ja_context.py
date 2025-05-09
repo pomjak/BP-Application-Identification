@@ -4,10 +4,10 @@ Description: This file contains the JA_Context class that implements the JA3/4 f
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 02/05/2025
+Updated: 09/05/2025
 """
 
-import config as Constants
+import config as CONFIG
 from .database import Database
 from .fingerprinting import FingerprintingMethod
 from .pattern_matching import Apriori
@@ -24,24 +24,22 @@ class JA_Context:
         context: Apriori,
         sliding_window_size,
     ):
-
         self.context = context
         self.fingerprinting = fingerprinting
         self.sliding_window_size = sliding_window_size
 
     def shuffle_df(self, df):
-        grouped_by_file = df.groupby(Constants.FILE)
-        grouped_by_app = df.groupby(Constants.APP_NAME)
+        grouped_by_file = df.groupby(CONFIG.FILE)
+        grouped_by_app = df.groupby(CONFIG.APP_NAME)
 
         with Logger() as logger:
             logger.info(
                 f"Average length of each group: {grouped_by_file.size().mean()}"
             )
-
-            logger.info(f"Modus of group sizes: {grouped_by_file.size().mode()[0]}")
+            self.context.group_size_mean = grouped_by_file.size().mean()
 
         lookup = {
-            app: list(group[Constants.FILE].unique()) for app, group in grouped_by_app
+            app: list(group[CONFIG.FILE].unique()) for app, group in grouped_by_app
         }
 
         # Distribute files while ensuring no adjacent app duplicates.
@@ -58,10 +56,10 @@ class JA_Context:
 
     def _log_apps_in_window(self, window):
         with Logger() as logger:
-            files_in_window = window.groupby(Constants.FILE)
+            files_in_window = window.groupby(CONFIG.FILE)
             apps_in_window = []
             for _, file in files_in_window:
-                apps_in_window.append(file[Constants.APP_NAME].iloc[0])
+                apps_in_window.append(file[CONFIG.APP_NAME].iloc[0])
             logger.debug(f"Apps in window: {apps_in_window}")
 
     def identify(self, db: Database):
@@ -76,7 +74,7 @@ class JA_Context:
                 f"Sliding window size: {self.sliding_window_size}, "
                 f"number of test launches: {num_test_launches}"
             )
-
+            self.context.sliding_window_size = self.sliding_window_size
             for i in range(num_test_launches):
                 self._process_window(i, test_df, db)
 
@@ -106,13 +104,13 @@ class JA_Context:
                 f"Window position: start={window_start}, end={window_start + window_size - 1}"
             )
             logger.debug(f"Row index within window: {row_index_within_window}")
-            logger.debug(f"Real app: {row[Constants.APP_NAME]}")
+            logger.debug(f"Real app: {row[CONFIG.APP_NAME]}")
 
         return window, row
 
     def _process_window(self, index: int, test_df, db: Database):
         window, row = self._slide_window(index, test_df)
-        real_app = row[Constants.APP_NAME]
+        real_app = row[CONFIG.APP_NAME]
 
         self._log_apps_in_window(window)
 

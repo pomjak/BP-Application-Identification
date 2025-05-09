@@ -164,8 +164,6 @@ class PatternMatchingMethod:
                 [
                     [
                         is_comb,
-                        config.columns_to_keep_for_context,
-                        config.PATTERN_FILTERS,
                         self.min_support,
                         self.candidate_size,
                         ja_version,
@@ -186,8 +184,6 @@ class PatternMatchingMethod:
                 ],
                 headers=[
                     "is_comb",
-                    "items",
-                    "pattern_filters",
                     "min_support",
                     "candidate_size",
                     "ja_version",
@@ -304,6 +300,8 @@ class Apriori(PatternMatchingMethod):
 
         patterns = patterns.reset_index(drop=True)
         db.frequent_patterns[app] = pd.DataFrame(patterns)
+        if patterns.empty:
+            return
         db.frequent_patterns[app] = self._normalize_support(db.frequent_patterns[app])
         with Logger() as logger:
             logger.debug(f"Found {len(patterns)} frequent item sets for {app} \n")

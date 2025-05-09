@@ -79,6 +79,15 @@ columns_to_keep_for_context = [
 
 #! EDIT LENGTH AND COUNT OF PATTERNS STORED PER ONE APP !#
 PATTERN_FILTERS = [
+    # iscx ja4
+    # {"operator": "==", "length": 1, "head": 5},
+    # {"operator": "==", "length": 3, "head": 10},
+    # iscx comb
+    # {"operator": "==", "length": 3, "head": 5},
+    # mobile ja4
+    # {"operator": "==", "length": 2, "head": 5},
+    # {"operator": "==", "length": 3, "head": 10},
+    # mobile comb
     {"operator": "==", "length": 1, "head": 2},
     {"operator": "==", "length": 3, "head": 2},
 ]
