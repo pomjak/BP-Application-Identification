@@ -4,7 +4,7 @@ Description: This file contains algorithms for detecting frequent patterns.
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 09/05/2025
+Updated: 11/05/2025
 
 CITATIONS OF SOURCES:
 [1] CHOUDHARY G. A Beginner’s Guide to Apriori .... [Online]. Best Tech Blog For Programming .., 2. září 2023.
@@ -101,7 +101,7 @@ class PatternMatchingMethod:
         with Logger() as logger:
             logger.warn(f"No similar apps found for {real_app}.")
 
-    def display_statistics(self, is_comb=False):
+    def display_statistics(self, is_comb=False, time=None, win=None):
         print("________________________________________________________")
         ja_version = self.ja_version
         print(
@@ -164,7 +164,8 @@ class PatternMatchingMethod:
                 [
                     [
                         is_comb,
-                        self.min_support,
+                        time,
+                        win,
                         self.candidate_size,
                         ja_version,
                         correct,
@@ -184,6 +185,8 @@ class PatternMatchingMethod:
                 ],
                 headers=[
                     "is_comb",
+                    "time",
+                    "sliding_window_size",
                     "min_support",
                     "candidate_size",
                     "ja_version",
@@ -204,7 +207,7 @@ class PatternMatchingMethod:
             )
 
         if not is_comb:
-            self.display_statistics(is_comb=True)
+            self.display_statistics(is_comb=True, time=time, win=win)
 
     def export_to_csv(self, data, headers=None):
         file_exists = os.path.exists(self.csv_file)

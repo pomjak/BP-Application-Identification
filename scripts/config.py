@@ -4,7 +4,7 @@ Description: This file contains constants representing column names in the datas
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 17/11/2024
-Updated: 09/05/2025
+Updated: 11/05/2025
 """
 
 # Modify the constants to match the dataset column names
@@ -35,12 +35,12 @@ SERVER_SUPPORTED_VERSIONS = "ServerSupportedVersions"
 columns_to_keep_in_db = [
     APP_NAME,  # need to be kept, excluded from identification
     FILE,  # need to be kept, excluded from identification
-    # JA3,  # kept for fingerprinting, in each run is selected only one version (JA3/JA4)
-    # JA3_S,
+    JA3,  # kept for fingerprinting, in each run is selected only one version (JA3/JA4)
+    JA3_S,
     JA4,
     JA4_S,
     SNI,  # needed for combination
-    #! FROM HERE INSERT EVERY ATTRIBUTE USED LATER FOR CONTEXT IDENTIFICATION !#
+    #! FROM HERE INSERT EVERY ATTRIBUTE USED LATER FOR CONTEXT IDENTIFICATION AND ALSO FURTHER DOWN !#
     # ORG,
     # TLS_VERSION,
     # CIPHER_SUITE,
@@ -84,17 +84,17 @@ PATTERN_FILTERS = [
     # {"operator": "==", "length": 3, "head": 10},
     # iscx comb
     # {"operator": "==", "length": 3, "head": 5},
-    # mobile ja4
+    # # mobile ja4
     # {"operator": "==", "length": 2, "head": 5},
     # {"operator": "==", "length": 3, "head": 10},
     # mobile comb
-    {"operator": "==", "length": 1, "head": 2},
-    {"operator": "==", "length": 3, "head": 2},
+    # {"operator": "==", "length": 1, "head": 2},
+    # {"operator": "==", "length": 3, "head": 2},
 ]
 
 
 # DEBUG LOG LEVEL
-DEBUG_ENABLED = True
+DEBUG_ENABLED = False
 
 
 def get_keys(ja_version):

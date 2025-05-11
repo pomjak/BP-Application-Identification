@@ -4,7 +4,7 @@ Description: Main file for identification of applications using JA3/4 fingerprin
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 09/05/2025
+Updated: 11/05/2025
 """
 
 from identify.command_line_parser import CommandLineParser
@@ -43,12 +43,11 @@ def main():
         )
         start_time = time.time()
         ja_context.identify(db)
-
-        ja_context.context.display_statistics()
-        print(
-            "--- identification took %s seconds ---"
-            % round(time.time() - start_time, 2)
+        finish_time = time.time() - start_time
+        ja_context.context.display_statistics(
+            time=finish_time, win=config.sliding_window_size
         )
+        print("--- identification took %s seconds ---" % round(finish_time, 2))
         logger.info("[FINISH]")
 
 

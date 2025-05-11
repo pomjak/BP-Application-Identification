@@ -20,9 +20,6 @@ PROGRAM = main.py
 
 .PHONY: install env experiments clean clean-all reqs help
 
-experiments: install exp1 exp2
-	@echo "All experiments completed. Check the output files in $(OUT_FOLDER)."
-
 exp1:
 	@echo "Running experiment 1..."
 	@mkdir -p $(OUT_FOLDER)
