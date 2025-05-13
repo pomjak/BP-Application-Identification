@@ -4,7 +4,7 @@ Description: This file contains constants representing column names in the datas
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 17/11/2024
-Updated: 11/05/2025
+Updated: 13/05/2025
 """
 
 # Modify the constants to match the dataset column names
@@ -60,7 +60,7 @@ columns_to_keep_in_db = [
 columns_to_keep_for_context = [
     # JA3,
     # JA3_S,
-    JA4,
+    JA4,  # mostly used items in experiments are JA4 JA4S SNI
     JA4_S,
     SNI,
     # ORG,

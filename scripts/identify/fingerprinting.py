@@ -4,7 +4,7 @@ Description: This file contains methods for identification of applications using
 Author: Pomsar Jakub
 Xlogin: xpomsa00
 Created: 15/11/2024
-Updated: 21/04/2025
+Updated: 13/05/2025
 """
 
 from config import get_keys, APP_NAME
@@ -65,7 +65,6 @@ class FingerprintingMethod:
         correct, incorrect, total, len_cand_comb = self.__get_statistics_combination()
         print("________________________________________________________")
         print(f"Combination of JA{self.version} + JA{self.version}S + SNI")
-        print("Real app name was found in set of candidates:")
         print(f"Correct: {correct}")
         print(f"Incorrect: {incorrect}")
         print(f"Total: {total}")
