@@ -8,6 +8,6 @@ env
 .vscode
 update_date.py
 *.log
-scripts/outs/patterns/mobile/*.csv
-scripts/outs/patterns/iscx/*.csv
-scripts/outs/patterns/filtered-mobile/*.csv
+patterns/mobile/*.csv
+patterns/iscx/*.csv
+patterns/filtered-mobile/*.csv
