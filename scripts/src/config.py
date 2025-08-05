@@ -88,8 +88,8 @@ PATTERN_FILTERS = [
     # {"operator": "==", "length": 2, "head": 5},
     # {"operator": "==", "length": 3, "head": 10},
     # mobile comb
-    # {"operator": "==", "length": 1, "head": 2},
-    # {"operator": "==", "length": 3, "head": 2},
+    {"operator": "==", "length": 1, "head": 2},
+    {"operator": "==", "length": 3, "head": 2},
 ]
 
 

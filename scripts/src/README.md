@@ -69,7 +69,7 @@ If you prefer to set up the environment manually:
 
 ## Usage
 
-This section provides usage instructions for the program and the Makefile.
+This section provides usage instructions for the program.
 
 ### Manual execution
 
@@ -104,11 +104,10 @@ If the `-f` is set to **4** (JA4 fingerprinting), then:
    - Results using **JA4 + JA4S + SNI** as the base method, with context applied (as selected in `config.py`).
 
 
-
-
-
 ## Experiments
-This section provides instructions for running the experiments executed in technical report. Since all experiments were conducted as iterations over different parameters (available for review in the outs/ folder as CSV files), it is recommended to run the program with only a few selected parameters. Running multiple configurations without filters and with a low minimum support may take a considerable amount of time. 
+This section provides instructions for running the experiments executed in technical report. Since all experiments were conducted as iterations over different parameters (available for review in the outs/ folder as CSV files) Running multiple configurations without filters and with a low minimum support may take a considerable amount of time. 
+
+The program allows you to execute the experiments through the Makefile using specific commands (`ex1`, `ex2`, etc.). However, manual execution is recommended as the configuration file (`config.py`) needs to be edited to select the exact parameters for each experiment. 
 
 Before running the experiments, make sure to create virtual environment, install the required packages and **activate the environment** as described in the [Installation](#installation) section.
 
@@ -236,7 +235,6 @@ To run the experiment with the **Mobile Desktop Apps** dataset, use this command
 ```bash
 python main.py -d data/mobile_desktop_apps_raw.csv -f 4 -w 3 -m 0.01 -c 9
 ```
-
 
 ### Acknowledgments
 

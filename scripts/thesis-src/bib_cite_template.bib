@@ -1,0 +1,466 @@
+============================== Webová stránka – @Webpage ==============================
+Povinné prvky:
+    author              Tvůrce
+    secondarytitle      Název příspěvku
+    title               Název stránky (domény)
+    day                 Den vydání
+    month               Měsíc vydání
+    year                Rok vydání
+    revised             Datum revize/aktualizace
+    issn                Standardní číslo
+    url                 Dostupnost a přístup
+    path                Cesta
+
+Povinné prvky pro online zdroje:
+    howpublished        Typ nosiče
+    doi                 Identifikátor digitálního objektu
+
+Volitelné prvky:
+    subtitle            Vedlejší název stránky
+    contributory        Další tvůrce
+    time                Čas publikování
+
+Prvky nepředepsány normou:
+    version             Verze
+    address             Místo vydání
+    publisher           Vydavatel
+    note                Poznámky
+
+@Webpage{key_webpage,
+  author          = {},
+  secondarytitle  = {},
+  title           = {},
+  day             = {},
+  month           = {},
+  year            = {},
+  revised         = {},
+  issn            = {},
+  url             = {},
+  path            = {},
+  cited           = {!yyyy-mm-dd},
+
+  howpublished    = {online},
+  doi             = {},
+  
+  subtitle        = {},
+  contributory    = {},
+  time            = {},
+}
+
+
+
+
+
+============================== Webová doména – @Website ==============================
+Povinné prvky:
+    author              Tvůrce (osoba nebo organizace)
+    title               Název stránky (domény)
+    year                Rok vydání
+    revised             Datum revize/aktualizace
+    cited               Datum citování
+    issn                Standardní číslo
+    url                 Dostupnost a přístup
+
+Povinné prvky pro online zdroje:
+    howpublished        Typ nosiče
+    doi                 Identifikátor digitálního objektu
+
+Volitelné prvky:
+    subtitle            Vedlejší název webu
+    contributory        Další tvůrce
+    time                Čas publikování
+    day                 Den vydání
+    month               Měsíc vydání
+
+Prvky nepředepsány normou:
+    version             Verze
+    address             Místo vydání
+    publisher           Vydavatel
+    note                Poznámky
+
+@Website{key_website,
+  author          = {},
+  title           = {},
+  year            = {},
+  revised         = {},
+  cited           = {!yyyy-mm-dd},
+  issn            = {},
+  url             = {},
+
+  howpublished    = {},
+  doi             = {},
+  
+  subtitle        = {},
+  contributory    = {},
+  time            = {},
+  day             = {},
+  month           = {},
+}
+
+
+
+
+
+============================== Monografická publikace – @Book, @Booklet (kniha, brožura) ==============================
+Povinné prvky:
+    author              Tvůrce
+    title               Titul
+    edition             Vydání
+    address             Místo (město) vydání
+    publisher           Nakladatel
+    month               Měsíc vydání
+    year                Rok vydání
+    revised/revision    Revize
+    series              Edice
+    editionnumber       Číslo edice
+    isbn                Standardní číslo
+
+Povinné prvky pro online zdroje:
+    howpublished        Typ nosiče
+    cited               Datum citování
+    url                 Dostupnost a přístup
+
+Volitelné prvky:
+    subtitle            Vedlejší názvy
+    contributory        Další tvůrce
+
+Prvky nepředepsány normou:
+    pages               Rozsah
+    note                Poznámky
+
+@Booklet{key_booklet,
+}
+
+@Book{key_book,
+  author          = {},
+  title           = {},
+  edition         = {},
+  address         = {},
+  publisher       = {},
+  month           = {},
+  year            = {},
+  revised         = {},
+  series          = {},
+  editionnumber   = {},
+  isbn            = {},
+
+  howpublished    = {},
+  cited           = {!yyyy-mm-dd},
+  url             = {},
+  
+  subtitle        = {},
+  contributory    = {},
+}
+
+
+
+
+
+============================== Akademická práce – @BachelorsThesis, @MastersThesis, @PhdThesis, @Thesis ==============================
+Povinné prvky:
+    author              Tvůrce
+    title               Titul
+    address/location    Místo (město) vydání
+    school              Škola
+    year                Rok vydání
+    isbn                Standardní číslo
+    type                Typ dokumentu (např. Diplomová práce)
+
+Povinné prvky pro online zdroje:
+    howpublished        Typ nosiče
+    cited               Datum citování
+    url                 Dostupnost a přístup
+
+Volitelné prvky:
+    subtitle            Vedlejší názvy
+    month               Měsíc vydání
+    Supervisor          Vedoucí práce
+
+Prvky nepředepsány normou:
+    pages               Rozsah
+    inserts             Rozsah příloh
+    note                Poznámky
+
+@BachelorsThesis{key_BachelorsThesis,
+}
+
+@MastersThesis{key_MastersThesis,
+}
+
+@PhdThesis{key_PhdThesis,
+}
+
+@Thesis{key_Thesis,
+  author          = {},
+  title           = {},
+  address/location         = {},
+  school          = {},
+  year            = {},
+  isbn            = {},
+  type            = {},
+
+  howpublished    = {},
+  cited           = {!yyyy-mm-dd},
+  url             = {},
+  
+  subtitle        = {},
+  month           = {},
+  Supervisor      = {},
+}
+
+
+
+
+
+============================== Sborník – @Proceedings ==============================
+Povinné prvky:
+    author/editor       Tvůrce/Editor
+    title               Titul
+    edition             Vydání
+    address             Místo (město) vydání
+    publisher           Nakladatel
+    month               Měsíc vydání
+    year                Rok vydání
+    volume              Svazek
+    number              Číslo svazku
+    pages               Rozsah příspěvku (např. 8--21)
+    series              Edice
+    editionnumber       Číslo edice
+    isbn/issn           Standardní číslo
+
+Povinné prvky pro online zdroje:
+    howpublished        Typ nosiče
+    revised             Revize
+    cited               Datum citování
+    doi                 Identifikátor digitálního objektu
+    url                 Dostupnost a přístup
+
+Volitelné prvky:
+    subtitle            Vedlejší názvy
+    contributory        Další tvůrce
+
+Prvky nepředepsány normou:
+    note                Poznámky
+
+@Proceedings{key_Proceedings,
+  author/editor          = {},
+  title           = {},
+  edition         = {},
+  address         = {},
+  publisher       = {},
+  month           = {},
+  year            = {},
+  volume          = {},
+  number          = {},
+  pages           = {},
+  series          = {},
+  editionnumber   = {},
+  isbn/issn            = {},
+
+  howpublished    = {},
+  revised         = {},
+  cited           = {!yyyy-mm-dd},
+  doi             = {},
+  url             = {},
+  
+  subtitle        = {},
+  contributory    = {},
+}
+
+
+
+
+
+============================== Článek v seriálové publikaci – @Article ==============================
+Povinné prvky:
+    author              Tvůrce
+    title               Titul
+    journal             Název seriálové publikace
+    edition             Vydání
+    version             Verze
+    address             Místo (město) vydání
+    publisher           Nakladatel
+    month               Měsíc vydání
+    year                Rok vydání
+    volume              Svazek
+    number              Číslo
+    pages               Rozsah příspěvku (např. 8--21)
+    revised             Revize
+    series              Název edice
+    editionnumber       Číslo edice
+    issn                Standardní číslo
+
+Povinné prvky pro online zdroje:
+    howpublished        Typ nosiče
+    cited               Datum citování
+    doi                 Identifikátor digitálního obsahu
+    url                 Dostupnost a přístup
+
+Volitelné prvky:
+    subtitle            Vedlejší název příspěvku
+    journalsubtitle     Vedlejší názvy seriálu
+    contributory        Další tvůrce
+
+Prvky nepředepsány normou:
+    note                Poznámky
+
+@Article{key_Article,
+  author          = {},
+  title           = {},
+  journal         = {},
+  edition         = {},
+  version         = {},
+  address         = {},
+  publisher       = {},
+  month           = {},
+  year            = {},
+  volume          = {},
+  number          = {},
+  pages           = {},
+  revised         = {},
+  series          = {},
+  editionnumber   = {},
+  issn            = {},
+
+  howpublished    = {},
+  cited           = {!yyyy-mm-dd},
+  doi             = {},
+  url             = {},
+  
+  subtitle        = {},
+  journalsubtitle = {},
+  contributory    = {},
+}
+
+
+
+
+
+============================== Článek ve sborníku nebo kapitola v knize – @InProceedings, @InCollection, @Conference, @InBook ==============================
+Povinné prvky:
+    author              Tvůrce
+    title               Název příspěvku
+    editor/organisation Jméno tvůrce mateřského dokumentu
+    booktitle           Název mateřského dokumentu
+    edition             Vydání
+    version             Verze
+    address             Místo (město) vydání
+    publisher           Nakladatel
+    month               Měsíc vydání
+    year                Rok vydání
+    volume              Svazek
+    number              Číslo svazku
+    pages               Rozsah příspěvku (např. 8--21)
+    revised             Revize
+    series              Edice
+    editionnumber       Číslo edice
+    isbn/issn           Standardní číslo
+
+Povinné prvky pro online zdroje:
+    howpublished        Typ nosiče
+    cited               Datum citování
+    doi                 Identifikátor digitálního objektu
+    url                 Dostupnost a přístup
+
+Volitelné prvky:
+    subtitle            Vedlejší názvy
+    booksubtitle        Vedlejší názvy mateřského dokumentu
+    contributory        Další tvůrce mateřského dokumentu
+    chapter             Kapitola
+
+Prvky nepředepsány normou:
+    note                Poznámky
+
+@InCollection{key_InCollection,
+}
+
+@Conference{key_Conference,
+}
+
+@InBook{key_InBook,
+}
+
+@InProceedings{key_InProceedings,
+  author          = {},
+  title           = {},
+  editor/organisation          = {},
+  booktitle       = {},
+  edition         = {},
+  version         = {},
+  address         = {},
+  publisher       = {},
+  month           = {},
+  year            = {},
+  volume          = {},
+  number          = {},
+  pages           = {},
+  revised         = {},
+  series          = {},
+  editionnumber   = {},
+  isbn/issn            = {},
+
+  howpublished    = {},
+  cited           = {!yyyy-mm-dd},
+  doi             = {},
+  url             = {},
+  
+  subtitle        = {},
+  booksubtitle    = {},
+  contributory    = {},
+  chapter         = {},
+}
+
+
+
+
+
+============================== Manuál, dokumentace, technická zpráva a nepublikované materiály – @Manual, @TechReport, @Unpublished ==============================
+Povinné prvky:
+    author              Tvůrce (osoba nebo organizace)
+    title               Titul
+    edition             Vydání
+    address             Místo (město) vydání
+    organization/institution    Organizace nebo instituce
+    month               Měsíc vydání
+    year                Rok vydání
+    revised             Revize
+
+Povinné prvky pro online zdroje:
+    howpublished        Typ nosiče
+    cited               Datum citování
+    url                 Dostupnost a přístup
+
+Volitelné prvky:
+    subtitle            Vedlejší názvy
+    contributory        Další tvůrce
+    type                Typ dokumantu (např. Uživatelský manuál)
+
+Prvky nepředepsány normou:
+    number              Číslo dokumentu
+    pages               Rozsah
+    note                Poznámky
+
+@TechReport{key_TechReport,
+}
+
+@Unpublished{key_Unpublished,
+}
+
+@Manual{key_Manual,
+  author          = {},
+  title           = {},
+  edition         = {},
+  address         = {},
+  organization/institution    = {},
+  month           = {},
+  year            = {},
+  revised         = {},
+
+  howpublished    = {},
+  cited           = {!yyyy-mm-dd},
+  url             = {},
+  
+  subtitle        = {},
+  contributory    = {},
+  type            = {},
+}

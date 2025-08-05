@@ -1,0 +1,8 @@
+\chapter{Úvod}
+V dnešní době téměř každá aplikace, která komunikuje s~okolním světem, zajišťuje bezpečnost a~soukromí svých uživatelů šifrováním své komunikace. V~momentě, kdy určitá aplikace generuje nežádoucí provoz, nebo je třeba identifikovat aplikace, které představují zranitelné místo v~síti, je nutné tyto aplikace správně rozpoznat. K~tomu se využívá právě ono šifrované spojení, pro~které existují metody klasifikace, jež umožňují extrahovat tzv.~otisk – jednoduše, rychle a~s~poměrně dobrou přesností.
+
+Výsledky těchto metod však zpravidla nejsou jednoznačné. Ve většině případů mohou být výsledky až matoucí, zejména kvůli velkému počtu aplikací, které vystupují jako kandidáti pro~dané spojení.
+
+Cílem této práce je tedy pokusit se zúžit výslednou skupinu kandidátů na~aplikace za~využití uvedených metod a~frekventovaných otisků z~okolních spojení. Pro~každé spojení bude použita metoda pro~identifikaci a~následně se určí nejpravděpodobnější aplikace na~základě vytěžených frekventovaných vzorců. Je zároveň žádoucí, aby byla zachována přesnost a~aby využití okolních spojení a~dalších informací nebylo příliš časově náročné.
+
+V následující kapitole jsou uvedeny potřebné znalosti síťových protokolů. V~navazující části jsou popsány současné metody pro~identifikaci šifrované komunikace. Teoretické základy pro~těžbu frekventovaných vzorů se nacházejí ve čtvrté kapitole. Návrh a~implementace řešení jsou uvedeny v~páté kapitole. Předposlední kapitola se věnuje analýze a~testování chování systému, aby bylo ověřeno splnění stanovených požadavků. Závěr tvoří sedmá kapitola této práce.

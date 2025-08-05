@@ -1,0 +1,12 @@
+\chapter{Závěr}
+Cílem této bakalářské práce byla identifikace aplikací v~síťovém provozu na~základě TLS spojení a~jeho okolí, přinášející zkrácení délky finální kandidátní množiny aplikací, které generují otisky \textit{JA3} a~\textit{JA4}. Zároveň měla být zachována co nejvyšší přesnost s~ohledem na~časovou náročnost, aby bylo možné výsledné řešení využít v~reálném provozu.
+
+Pro poskytnuté datové sady se zdá být tento cíl splněn. Síťová komunikace, zejména protokol \textit{TLS}, byla podrobně analyzována. Datové sady byly prostudovány a~vyhodnoceny, stejně jako možnosti identifikace na~základě těchto dat. Pro~identifikaci na~základě okolních spojení byl navržen a~implementován vlastní systém. Hodnocení úspěšnosti identifikace bylo převzato z~předchozích studií a~mírně upraveno pro~potřeby navrženého přístupu. V~závěrečné fázi byl systém i~jeho výsledky analyzován a~zhodnocen.
+
+Navržený způsob identifikace spolu s~aplikací selekce vzorů dosahuje dobrých výsledků při~eliminaci nadbytečných kandidátů, a~to při~zachování požadované přesnosti. Celý proces přitom probíhá v~přijatelných časových mezích.
+
+Pro datovou sadu \textit{iscx.csv} bylo dosaženo přesnosti 93{,}1~\%, přičemž průměrná velikost kandidátní množiny se zúžila z~3{,}1 na~2{,}5 kandidáta na~jedno identifikované spojení. Stejné přesnosti bylo dosaženo i~u~datové sady \texttt{mobile\_desktop\_apps\_raw.csv}, u~níž průměrná délka kandidátní množiny klesla na~méně než polovinu původní hodnoty.
+
+Všechny zaznamenané statistiky rovněž potvrzují výrazné snížení velikosti kandidátních množin. Tyto množiny jsou navíc normalizovány i~v~okrajových případech -- tedy situacích, kdy by jinak mohlo být kandidátů příliš mnoho nebo naopak žádný.
+
+Práci by bylo možné dále rozšířit například o~jiný nebo doplňující data-miningový algoritmus, který by dokázal získávat informace jiným způsobem — toto možné rozšíření bylo v~návrhu systému zohledněno. Rovněž by bylo přínosné otestovat další kombinace vstupních dat a~různá nastavení filtrů. V~případě dalšího testování by dalším krokem mohlo být nasazení systému v~reálné síťové komunikaci s~cílem ověřit jeho efektivitu při~zpracování reálných dat -- a~to jak z~hlediska rychlosti, tak přesnosti.
