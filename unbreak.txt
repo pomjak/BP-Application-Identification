@@ -1,2 +1,0 @@
-( |~)(k|s|v|z|a|i|o|u|do|na|od|po|pod|pro|při|bez|nad|před|za|mezi|ke|č|čl)( )
-$1$2~
